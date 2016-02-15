@@ -1,0 +1,19 @@
+{
+  "name": "clojure-in-js",
+  "version": "0.0.1",
+  "description": "Implementing a subset of Clojure in JS",
+  "private": true,
+  "author": "Ethan Resnick",
+  "engines": {
+    "node": ">=5.0.0"
+  },
+  "devDependencies": {
+    "chai": "~1.9.0",
+    "mocha": "~1.10.0",
+    "sinon": "1.10.2",
+    "sinon-chai": "2.5.x"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha $(find ./test -name \"*.js\") -R spec"
+  }
+}
