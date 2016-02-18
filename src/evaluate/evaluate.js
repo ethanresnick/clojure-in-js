@@ -50,7 +50,7 @@ function evaluate(expr, env) {
 
     else {
       const fn = evaluate(expr.get(0), env);
-      const args = expr.shift().map(v => evaluate(v, env)).toJS();
+      const args = expr.shift().map(v => evaluate(v, env)).toArray();
       return fn.apply(null, args);
     }
   }

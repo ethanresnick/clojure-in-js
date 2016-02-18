@@ -13,9 +13,7 @@ module.exports =  {
     return args.every(it => it === args[0]);
   },
 
-  // Make sure we're not counting keywords as symbols.
   "symbol?": function(val) {
-    console.log(val, Symbol.keyFor(val));
-    return typeof val === "symbol" && Symbol.keyFor(val)[0] !== ':';
+    return val instanceof types.Symbol;
   }
 }
