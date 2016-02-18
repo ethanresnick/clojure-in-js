@@ -1,37 +1,16 @@
 /**
  * My simplified lisp-ish parser
  *
- * Each AST object is one of:
- *
- *   A JS array (used for lists)
- *
- *   An instance of Vector (used for clojure vectors)
- *
- *   A js primitive, for numbers, strings, and booleans.
- *
  * Each program is a single expression.
  */
 
 "use strict";
 
-class Vector {
-  constructor() {
-    this.entries = Array.from(arguments);
-  }
-
-  push(entry) {
-    this.entries.push(entry);
-  }
-}
-
-class Var {
-  constructor(name) {
-    this.name = name;
-  }
-}
+var nodes = require("./ast-nodes.js");
 
 /**
  * Returns an array of tokens, not tagged by category.
+ * Each token is simply a string.
  *
  * Note that strings are returned with their opening
  * and closing quotes as part of the token, for simpler
@@ -91,11 +70,12 @@ function atomFromToken(token) {
   else if (match = /^\d+(\.\d+)?$/.exec(token))
     return Number(match[0]);
 
-  else if (match = /^(true|false)$/.exec(token))
-    return match[0] === "true";
+  else if (match = /^(true|false|nil)$/.exec(token))
+    return match[0] === "nil" ? null : (match[0] === "true");
 
   else if (match = /^[^()"\[\]]+$/.exec(token))
-    return new Var(match[0]);
+    return match[0][0] === ":" ?
+      nodes.keyword(match[0].slice(1)) : nodes.symbol(match[0]);
 
   else
     throw new SyntaxError("Not an atom: " + token);
@@ -117,7 +97,7 @@ function parseExpression(tokens) {
     const closingDelim = tokens[0] === '(' ? ')' : ']';
 
     // Set up the AST node.
-    result.expr = (closingDelim == ')') ? [] : new Vector();
+    result.expr = (closingDelim == ')') ? nodes.list() : nodes.vector();
 
     // Skip past the opening delimiter.
     tokens = tokens.slice(1);
@@ -135,6 +115,7 @@ function parseExpression(tokens) {
     return result;
   }
 
+  // Our (sub) expression is an atom.
   else {
     return {expr: atomFromToken(tokens[0]), rest: tokens.slice(1)};
   }
@@ -154,7 +135,5 @@ module.exports = {
   tokenize: tokenize,
   atomFromToken: atomFromToken,
   parseExpression: parseExpression,
-  parse: parse,
-  Var: Var,
-  Vector: Vector
+  parse: parse
 };

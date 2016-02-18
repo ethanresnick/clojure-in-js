@@ -1,7 +1,8 @@
 "use strict";
 var mocha = require("mocha");
 var expect = require("chai").expect;
-var parse = require("../src/parse.js");
+var parse = require("../src/parse/parse.js");
+var nodes = require("../src/parse/ast-nodes.js");
 
 describe("tokenization", () => {
   const tokenize = parse.tokenize;
@@ -18,6 +19,12 @@ describe("tokenization", () => {
       "(", "defmacro", "my-future", "[", "code", "]",
         "(", "let", "[", "a", '"bobb"', "]", "(", ")", ")",
       ")"
+    ]);
+  });
+
+  it("should parse keywords, with their leading colon, as a single token", () => {
+    expect(tokenize("(:my-key my-map nil)")).to.deep.equal([
+      "(", ":my-key", "my-map", "nil", ")"
     ]);
   });
 
@@ -48,9 +55,16 @@ describe("parsing atoms from a token", () => {
     expect(toAtom("false")).to.equal(false);
   });
 
-  it("should return vars for other symbols", () => {
-    expect(toAtom("my-future")).to.be.an.instanceof(parse.Var);
-    expect(toAtom("my-future").name).to.equal("my-future");
+  it("should return null for nil", () => {
+    expect(toAtom("nil")).to.equal(null);
+  });
+
+  it("should return a symbol node for symbols", () => {
+    expect(toAtom("my-future")).to.deep.equal({type: "symbol", name: "my-future"});
+  });
+
+  it("should return a keyword node for keywords", () => {
+    expect(toAtom(":true")).to.deep.equal({type: "keyword", name: "true" });
   });
 
   it("should throw on tokens for non-atoms, including invalid symbol names", () => {
@@ -74,26 +88,31 @@ describe("parsing arbitrary expressions from tokens", () => {
   });
 
   it("should handle the empty list", () => {
-    expect(parseExp(["(", ")"])).to.deep.equal({expr: [], rest: []});
+    expect(parseExp(["(", ")"])).to.deep.equal({
+      expr: nodes.list(),
+      rest: []
+    });
   });
 
   it("should handle the empty vector", () => {
-    const res = parseExp(["[", "]"]);
-    expect(res.expr).to.be.an.instanceof(parse.Vector);
-    expect(res.expr.entries).to.deep.equal([]);
-    expect(res.rest).to.deep.equal([]);
+    expect(parseExp(["[", "]"])).to.deep.equal({
+      expr: nodes.vector(),
+      rest: []
+    });
   });
 
   it("should handle arbitrary expressions", () => {
-    const res = parseExp(["(", "true", "[", "symbol", "4", "(", "1", ")", "]", ")"]);
-    expect(res.expr).to.deep.equal([true, new parse.Vector(new parse.Var("symbol"), 4, [1])]);
-    expect(res.rest).to.deep.equal([]);
+    expect(parseExp(["(", "true", "[", "symbol", "4", "(", "1", ")", "]", ")"])).to.deep.equal({
+      expr: nodes.list(true, nodes.vector(nodes.symbol("symbol"), 4, nodes.list(1))),
+      rest: []
+    });
   });
 
   it("should capture tokens after an expression correctly", () => {
-    const res = parseExp(["(", "true", "[", "symbol", "4", "(", "1", ")", "]", ")", "5"]);
-    expect(res.expr).to.deep.equal([true, new parse.Vector(new parse.Var("symbol"), 4, [1])]);
-    expect(res.rest).to.deep.equal(["5"]);
+    expect(parseExp(["(", "true", "[", "symbol", "4", "(", "1", ")", "]", ")", "5"])).to.deep.equal({
+      expr: nodes.list(true, nodes.vector(nodes.symbol("symbol"), 4, nodes.list(1))),
+      rest: ["5"]
+    });
   });
 });
 
@@ -109,23 +128,24 @@ describe("parsing a program from text", () => {
                                 "(= 1 size) (list (inc (first thisList)))",
                                 ":else (cons (inc (first thisList)) (inclist (rest thisList))))))"];
 
-    const vars = (name) => new parse.Var(name);
+    const sym = (name) => nodes.symbol(name);
+    const list = function() { return nodes.list.apply(null, arguments) };
 
-    expect(parse.parse(programLines.join("\n"))).to.deep.equal([
-      vars("defn"),
-      vars("inclist"),
+    expect(parse.parse(programLines.join("\n"))).to.deep.equal(list(
+      sym("defn"),
+      sym("inclist"),
       "Returns a new list with each entry from the provided list incremented by 1.",
-      new parse.Vector(vars("thisList")),
-      [vars("let"), new parse.Vector(vars("size"), [vars("count"), vars("thisList")]),
-        [vars("cond"),
-          [vars("="), 0, vars("size")],
-          [vars("list")],
-          [vars("="), 1, vars("size")],
-          [vars("list"), [vars("inc"), [vars("first"), vars("thisList")]]],
-          vars(":else"),
-          [vars("cons"), [vars("inc"), [vars("first"),  vars("thisList")]], [vars("inclist"), [vars("rest"), vars("thisList")]]]
-        ]
-      ]
-    ]);
+      nodes.vector(sym("thisList")),
+      list(sym("let"), nodes.vector(sym("size"), list(sym("count"), sym("thisList"))),
+        list(sym("cond"),
+          list(sym("="), 0, sym("size")),
+          list(sym("list")),
+          list(sym("="), 1, sym("size")),
+          list(sym("list"), list(sym("inc"), list(sym("first"), sym("thisList")))),
+          nodes.keyword("else"),
+          list(sym("cons"), list(sym("inc"), list(sym("first"),  sym("thisList"))), list(sym("inclist"), list(sym("rest"), sym("thisList"))))
+        )
+      )
+    ));
   });
 });
