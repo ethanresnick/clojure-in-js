@@ -15,5 +15,8 @@
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha $(find ./test -name \"*.js\") -R spec"
+  },
+  "dependencies": {
+    "immutable": "^3.7.6"
   }
 }
