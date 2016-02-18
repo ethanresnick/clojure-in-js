@@ -1,11 +1,10 @@
 "use strict";
 var mocha = require("mocha");
 var expect = require("chai").expect;
+var types = require("../src/data-types");
 var parse = require("../src/parse/parse.js");
-var Immutable = require('immutable');
 var globalEnv = require("../src/evaluate/global-env.js");
-var evaluate = require("../src/evaluate/evaluate.js").evaluate;
-var isVector = require("../src/evaluate/evaluate.js").isVector;
+var evaluate = require("../src/evaluate/evaluate.js");
 
 describe("evaluation basics", () => {
   it("should properly evaluate numbers", () => {
@@ -16,10 +15,9 @@ describe("evaluation basics", () => {
     expect(evaluate(parse.parse("nil"), {})).to.equal(null);
   });
 
-  it("should evaluate vectors as Immutable.Lists, but that pass isVector()", () => {
+  it("should evaluate vectors correctly according to isVector()", () => {
     const res = evaluate(parse.parse("[1 2 3]"), {});
-    expect(isVector(res)).to.be.true;
-    expect(res).to.be.an.instanceof(Immutable.List);
+    expect(types.isVector(res)).to.be.true;
   });
 
   it("should treat lists as procedure calls when the first item isn't a special form", () => {
@@ -52,4 +50,7 @@ describe("special forms", () => {
       expect(() => { evaluate(parse.parse("(if false 4 (will-throw (+ 1 2 6)))"), env) }).to.throw(Error);
     });
   });
+
+  describe("def", () => {
+  })
 });

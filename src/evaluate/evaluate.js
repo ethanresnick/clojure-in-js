@@ -1,75 +1,63 @@
 "use strict";
-var Immutable = require('immutable');
-
-// Implement vectors, like lists, using Immutable.List.
-// But stick a property on the resulting object to distinguish
-// them from lists.
-const vectorDiscriminator = Symbol();
-
-function Vector(/* ...values */) {
-  const list = Immutable.List.apply(Immutable, arguments);
-  list[vectorDiscriminator] = true;
-  return list;
-}
-
-function isVector(it) {
-  return (typeof it == "object") && it !== null && it[vectorDiscriminator];
-}
+var types = require('../data-types');
 
 // Define our special forms.
 const specialForms = {
   if(env, rest) {
-    if(evaluate(rest[0], env))
-      return evaluate(rest[1], env);
+    const test = evaluate(rest.get(0), env);
+    if(test === false || test === null)
+      return evaluate(rest.get(2), env);
 
     else
-      return evaluate(rest[2], env);
+      return evaluate(rest.get(1), env);
   },
 
   quote(env, rest) {
-    return rest[0];
+    return rest.get(0);
+  },
+
+  /**
+   * Note: our def is dramatically simpler than clojure's.
+   * In particular, because we don't have multiple mutable
+   * value types (vars, refs, agents, etc), and aren't
+   * dealing with threads, we don't introduce the concept
+   * of a "var object" in addition to a symbol and its
+   * currently bound value.
+   */
+  def(env, rest) {
+    env[rest.get(0).get('name')] =
+      rest.get(1) !== undefined ? evaluate(rest.get(1), env) : undefined;
+
+    return rest.get(0);
   }
 };
 
 function evaluate(expr, env) {
-  // return numbers, strings, booleans, nil as is
-  // from the ast (i.e. as javascript primitives).
-  if(typeof expr !== "object" || expr === null)
-    return expr;
+  // treat symbols like variables to be looked up
+  // (See comment on the def special form).
+  if(expr instanceof types.Symbol) {
+    const val = env[expr.get('name')];
+    if(val === undefined)
+      throw new Error("Can't lookup a symbol's value before its set.")
 
-  switch(expr.type) {
-    // have keywords always evaluate to themselves, using
-    // js's built-in global symbol registry. Note, we store
-    // and look up keywords in the symbol registry with a
-    // leading colon in their key, so they won't conflict
-    // with the symbols for variables.
-    case "keyword":
-      return Symbol.for(':' + expr.name);
-
-    // treat all other symbols like variables (though also
-    // define a symbol for them in the global so they can be
-    // retrieved quoted).
-    case "symbol":
-      return env[Symbol.for(expr.name)];
-
-    // back vectors (and soon other data structures) with immutable.js
-    case "vector":
-      return Vector(expr.entries);
-
-    // for lists, check for special forms; otherwise treat as a procedure call.
-    case "list":
-      if(specialForms[expr.entries[0].name])
-        return specialForms[expr.entries[0].name](env, expr.entries.slice(1));
-
-      else {
-        const fn = evaluate(expr.entries[0], env);
-        const args = expr.entries.slice(1).map(v => evaluate(v, env));
-        return fn.apply(null, args);
-      }
+    return val;
   }
+
+  // for lists, check for special forms; otherwise treat as a procedure call.
+  if(expr instanceof types.List && !types.isVector(expr)) {
+    if(specialForms[expr.get(0).get('name')])
+      return specialForms[expr.get(0).get('name')](env, expr.shift());
+
+    else {
+      const fn = evaluate(expr.get(0), env);
+      const args = expr.shift().map(v => evaluate(v, env)).toJS();
+      return fn.apply(null, args);
+    }
+  }
+
+  // For all other types (i.e. keywords, vector literals,
+  // numbers, strings, booleans, and nil, return them as parsed).
+  return expr;
 }
 
-module.exports = {
-  isVector: isVector,
-  evaluate: evaluate
-}
+module.exports = evaluate;
