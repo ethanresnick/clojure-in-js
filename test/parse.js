@@ -1,5 +1,4 @@
 "use strict";
-var mocha = require("mocha");
 var expect = require("chai").expect;
 var parse = require("../src/parse/parse.js");
 var nodes = require("../src/parse/ast-nodes.js");
@@ -20,6 +19,12 @@ describe("tokenization", () => {
         "(", "let", "[", "a", '"bobb"', "]", "(", ")", ")",
       ")"
     ]);
+  });
+
+  it("should tokenize one atom programs", () => {
+    expect(tokenize("4.2")).to.deep.equal(["4.2"]);
+    expect(tokenize("nil")).to.deep.equal(["nil"]);
+    expect(tokenize(":true")).to.deep.equal([":true"]);
   });
 
   it("should parse keywords, with their leading colon, as a single token", () => {

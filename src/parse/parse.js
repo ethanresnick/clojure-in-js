@@ -54,6 +54,14 @@ function tokenize(program) {
     currPos++;
   }
 
+  // Above, we're adding the tokens that we build up character
+  // by character, like symbol names or int literals, to the token
+  // list when we get to the delimiter after the token ends. But,
+  // if such a token is the last token in the stream, we need to
+  // add it too! This does that.
+  if(currToken.length)
+    tokens.push(currToken);
+
   return tokens;
 }
 
