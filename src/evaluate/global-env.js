@@ -14,5 +14,9 @@ module.exports =  {
 
   "symbol?": function(val) {
     return val instanceof types.Symbol;
+  },
+
+  "list": function(/* ... args */) {
+    return types.List(arguments);
   }
 }
