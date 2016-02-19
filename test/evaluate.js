@@ -6,48 +6,61 @@ var parse = require("../src/parse/parse.js");
 var globalEnv = require("../src/evaluate/global-env.js");
 var evaluate = require("../src/evaluate/evaluate.js");
 
+var run = function(program, env) {
+  return evaluate(parse.parse(program), env);
+}
+
 describe("evaluation basics", () => {
   it("should properly evaluate numbers", () => {
-    expect(evaluate(4, {})).to.equal(4);
+    expect(run("4", {})).to.equal(4);
   });
 
   it("should properly evaluate nil", () => {
-    expect(evaluate(parse.parse("nil"), {})).to.equal(null);
+    expect(run("nil", {})).to.equal(null);
   });
 
   it("should evaluate vectors correctly according to isVector()", () => {
-    const res = evaluate(parse.parse("[1 2 3]"), {});
+    const res = run("[1 2 3]", {});
     expect(types.isVector(res)).to.be.true;
   });
 
-  it("should treat lists as procedure calls when the first item isn't a special form", () => {
-    expect(evaluate(parse.parse("(+ 1 2 3)"), globalEnv)).to.equal(6);
+  it("should treat lists as procedure calls when the first item is a non-special form symbol", () => {
+    expect(run("(+ 1 2 3)", globalEnv)).to.equal(6);
   });
+
+  it("should evaluate the first item of a list if it's not a symbol", () => {
+    expect(run("((if true + -) 1 2)", globalEnv)).to.equal(3);
+  });
+
+  it("should return the list if its empty", () => {
+    expect(run("()", globalEnv)).to.deep.equal(types.List());
+    expect(run("(if 1 () 0)", globalEnv)).to.deep.equal(types.List());
+  })
 });
 
 describe("special forms", () => {
   describe("quote", () => {
     it("should return its argument unevaluated", () => {
-      expect(evaluate(parse.parse("(quote (+ 1 2 3))"), {})).to.deep.equal(parse.parse("(+ 1 2 3)"));
+      expect(run("(quote (+ 1 2 3))", {})).to.deep.equal(parse.parse("(+ 1 2 3)"));
     });
   });
 
   describe("if", () => {
     const env = Object.assign(Object.create(globalEnv), {
-      [Symbol.for("will-throw")]: function() { throw new Error("fn was called"); }
+      "will-throw": function() { throw new Error("fn was called"); }
     });
 
     it("should evaluate the condition", () => {
-      expect(evaluate(parse.parse("(if (= (+ 1 2) 3) true false)"), globalEnv)).to.be.true;
+      expect(run("(if (= (+ 1 2) 3) true false)", globalEnv)).to.be.true;
     });
 
     it("should lazily evaluate the branches", () => {
       // If these tests complete successfully, will-throw wasn't called.
-      expect(evaluate(parse.parse("(if true (+ 1 2 3) (will-throw 1))"), env)).to.equal(6);
-      expect(evaluate(parse.parse("(if false (will-throw 1) 8)"), env)).to.equal(8);
+      expect(run("(if true (+ 1 2 3) (will-throw 1))", env)).to.equal(6);
+      expect(run("(if false (will-throw 1) 8)", env)).to.equal(8);
 
-      expect(() => { evaluate(parse.parse("(if true (will-throw 1) 1)"), env) }).to.throw(Error);
-      expect(() => { evaluate(parse.parse("(if false 4 (will-throw (+ 1 2 6)))"), env) }).to.throw(Error);
+      expect(() => { run("(if true (will-throw 1) 1)", env) }).to.throw(Error);
+      expect(() => { run("(if false 4 (will-throw (+ 1 2 6)))", env) }).to.throw(Error);
     });
   });
 

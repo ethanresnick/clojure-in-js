@@ -45,7 +45,10 @@ function evaluate(expr, env) {
 
   // for lists, check for special forms; otherwise treat as a procedure call.
   if(expr instanceof types.List && !types.isVector(expr)) {
-    if(specialForms[expr.get(0).get('name')])
+    if(expr.size === 0) // This approach might be problematic once we have lazy seqs.
+      return expr;
+
+    if(expr.get(0) instanceof types.Symbol && specialForms[expr.get(0).get('name')])
       return specialForms[expr.get(0).get('name')](env, expr.shift());
 
     else {
