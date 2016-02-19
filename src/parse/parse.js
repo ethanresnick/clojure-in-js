@@ -47,6 +47,9 @@ function parseExpression(tokens) {
   tokens = tokens.slice(0);
   var result = {};
 
+  if(tokens.length === 0)
+    throw new SyntaxError("Unexpected end of input");
+
   // Our (sub) expression is a list or vector.
   if(tokens[0] === '(' || tokens[0] === '[') {
     const closingDelim = tokens[0] === '(' ? ')' : ']';

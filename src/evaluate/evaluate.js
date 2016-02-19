@@ -4,6 +4,9 @@ var types = require('../data-types');
 // Define our special forms.
 const specialForms = {
   if(env, rest) {
+    if(rest.size !== 3)
+      throw new SyntaxError("if expects exactly three arguments; got " + rest.size);
+
     const test = evaluate(rest.get(0), env);
     if(test === false || test === null)
       return evaluate(rest.get(2), env);
