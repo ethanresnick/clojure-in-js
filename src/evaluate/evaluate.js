@@ -5,8 +5,7 @@ var asserts = require('./asserts');
 // Define our special forms.
 const specialForms = {
   if(env, rest) {
-    if(rest.size !== 3)
-      throw new SyntaxError("if expects exactly three arguments; got " + rest.size);
+    asserts.arity([3], "if", rest);
 
     const test = evaluate(rest.get(0), env);
     if(test === false || test === null)
@@ -77,7 +76,9 @@ function evaluate(expr, env) {
 
   // for lists, check for special forms; otherwise treat as a procedure call.
   if(expr instanceof types.List && !types.isVector(expr)) {
-    if(expr.size === 0) // This approach might be problematic once we have lazy seqs.
+    // Handle the empty list.
+    // This approach might be problematic once we have lazy seqs.
+    if(expr.size === 0)
       return expr;
 
     if(expr.get(0) instanceof types.Symbol && specialForms[expr.get(0).get('name')])
