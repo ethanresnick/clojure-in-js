@@ -1,5 +1,6 @@
 "use strict";
 var types = require('../data-types');
+var asserts = require('./asserts');
 
 // Define our special forms.
 const specialForms = {
@@ -24,16 +25,44 @@ const specialForms = {
    * In particular, because we don't have multiple mutable
    * value types (vars, refs, agents, etc), and aren't
    * dealing with threads, we don't introduce the concept
-   * of a "var object" in addition to a symbol and its
-   * currently bound value.
+   * of a "var object" that exists in addition to the symbol
+   * and its currently bound value.
+   *
+   * Instead, we roughly simulate clojure's behavior by having
+   * def always sets a (mutable) value at the _root_, even if
+   * it's used from within a nested scope. This should encourage
+   * the use let within procedures for immutable bindings.
+   *
+   * Finally, because we don't have vars, we return the bound
+   * value rather than the var object.
    */
   def(env, rest) {
-    env[rest.get(0).get('name')] =
-      rest.get(1) !== undefined ? evaluate(rest.get(1), env) : undefined;
+    asserts.arity([2], "def", rest);
+    asserts.instanceof("First argument to def", rest.get(0), types.Symbol);
 
-    return rest.get(0);
+    // Note that we evaluate the expression in the current
+    // scope to get the value we're going to bind, but we put
+    // the binding on the root scope.
+    const value = evaluate(rest.get(1), env);
+    getRootScope(env)[rest.get(0).get('name')] = value;
+
+    return value;
+  },
   }
 };
+
+
+/**
+ * Walks the prototype chain until it gets to the last obj before null.
+ */
+function getRootScope(env) {
+  let outerEnv;
+  while((outerEnv = Object.getPrototypeOf(env)) !== null) {
+    env = outerEnv;
+  }
+  return env;
+}
+
 
 function evaluate(expr, env) {
   // treat symbols like variables to be looked up
@@ -66,4 +95,6 @@ function evaluate(expr, env) {
   return expr;
 }
 
+
+evaluate.getRootScope = getRootScope;
 module.exports = evaluate;

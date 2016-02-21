@@ -2,7 +2,11 @@
 var Immutable = require('immutable');
 var types = require('../data-types');
 
-module.exports =  {
+function createEnv(symbols) {
+  return Object.assign(Object.create(null), symbols);
+}
+
+module.exports = createEnv({
   "+": function(/* ...args */) {
     return Array.from(arguments).reduce(((acc, it) => acc + it), 0);
   },
@@ -19,4 +23,4 @@ module.exports =  {
   "list": function(/* ... args */) {
     return types.List(arguments);
   }
-}
+});
