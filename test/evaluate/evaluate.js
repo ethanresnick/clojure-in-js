@@ -34,6 +34,12 @@ describe("evaluation basics", () => {
   it("should return the list if its empty", () => {
     expect(run("()", globalEnv)).to.deep.equal(types.List());
     expect(run("(if 1 () 0)", globalEnv)).to.deep.equal(types.List());
+  });
+
+
+  it("should only evaluate function arguments once when called", () => {
+    // If the args are evalauted twice, we'll get an error because 1 isn't a function.
+    expect(run("(count (list 1 2))", globalEnv)).to.equal(2);
   })
 });
 
@@ -134,5 +140,11 @@ describe("special forms", () => {
   });
 
   describe("fn", () => {
-  })
+    it("should NOT bind its arguments sequentially like a standard let", () => {
+      const sequentialTest1 = () => run("(do (def test (fn [a b] (list a b))) (test 1 a))", globalEnv);
+      const sequentialTest2 = () => run("(do (def a 2) (def test (fn [a b] (list a b))) (test 1 a))", globalEnv);
+      expect(sequentialTest1).to.throw(ReferenceError);
+      expect(sequentialTest2()).to.deep.equal(new types.List([1, 2]));
+    });
+  });
 });
