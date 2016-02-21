@@ -4,6 +4,11 @@ module.exports = {
       throw new SyntaxError(`${fnName} expects exactly ${allowedArities.join(' or ')} arguments; got ${rest.size}.`);
   },
 
+  minArity(minArity, fnName, args) {
+    if(args.size < minArity)
+      throw new SyntaxError(`${fnName} expects at least ${minArity} arguments; got ${rest.size}.`);
+  },
+
   instanceof(toTestDesc, toTest, expectedType) {
     if(!(toTest instanceof expectedType))
       throw new TypeError(`${toTestDesc} must be a(n) ${expectedType}`);

@@ -117,5 +117,20 @@ describe("special forms", () => {
       expect(env.innerVal).to.equal(2);
     });
   });
+
+  describe("let", () => {
+    it("should set up bindings when the binding forms are simple symbols", () => {
+      expect(run("(let [x 1 y 9] (+ y x))", globalEnv)).to.equal(10);
+    });
+
+    it("should allow subsequent bindings to see previous ones", () => {
+      expect(run("(let [x 1 y x] y)", globalEnv)).to.equal(1);
+    });
+
+    it("should only set bindings on the inner (temporary) scopes", () => {
+      run("(let [x 1 y x] y)", globalEnv);
+      expect(globalEnv.y).to.be.undefined;
+      expect(globalEnv.x).to.be.undefined;
+    });
   })
 });

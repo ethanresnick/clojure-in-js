@@ -54,6 +54,39 @@ const specialForms = {
     // there'll be no side effects & order's irrelevant.
     return rest.map(v => evaluate(v, env)).last();
   },
+
+  // Let creates a new enviroment with the existing
+  // environment as the new one's outer scope, and
+  // then does some bindings in the new environment,
+  // and evaluates its body in the new environment.
+  let(env, rest) {
+    asserts.minArity(2, "let", rest);
+
+    const bindings = rest.get(0);
+    const body = rest.shift();
+
+    if(!types.isVector(bindings))
+       throw new SyntaxError("The first argument to let (the binding forms) must be a vector.");
+
+    if(bindings.size % 2 !== 0)
+      throw new SyntaxError("let expects an even number of items in the bindings vector.");
+
+    // Create the child env.
+    const newEnv = Object.create(env);
+
+    // Set up its bindings, evaluating as we go.
+    // Assume we're just dealing with symbols as
+    // our binding forms (i.e., no destructuring yet).
+    for(let i = 0; i < bindings.size; i+=2) {
+      Object.defineProperty(
+        newEnv,
+        bindings.get(i).get('name'),
+        {value: evaluate(bindings.get(i+1), newEnv), enumerable: true});
+    }
+
+    // Now evaluate the body.
+    return specialForms["do"](newEnv, body);
+  },
   }
 };
 
@@ -76,7 +109,7 @@ function evaluate(expr, env) {
   if(expr instanceof types.Symbol) {
     const val = env[expr.get('name')];
     if(val === undefined)
-      throw new Error("Can't lookup a symbol's value before its set.")
+      throw new ReferenceError("The symbol " + expr.get('name') + " has not been assigned a value.");
 
     return val;
   }
