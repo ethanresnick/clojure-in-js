@@ -6,7 +6,7 @@ const utils = require("./utils");
 // Define our special forms.
 const specialForms = {
   if(env, rest) {
-    asserts.arity([3], "if", rest);
+    asserts.arity([3], "if", rest.size);
 
     const test = evaluate(rest.get(0), env);
     if(test === false || test === null)
@@ -37,7 +37,7 @@ const specialForms = {
    * value rather than the var object.
    */
   def(env, rest) {
-    asserts.arity([2], "def", rest);
+    asserts.arity([2], "def", rest.size);
     asserts.instanceof("First argument to def", rest.get(0), types.Symbol);
 
     // Note that we evaluate the expression in the current
@@ -61,7 +61,7 @@ const specialForms = {
   // then does some bindings in the new environment,
   // and evaluates its body in the new environment.
   let(env, rest) {
-    asserts.minArity(2, "let", rest);
+    asserts.minArity(2, "let", rest.size);
 
     const bindings = rest.get(0);
     const body = rest.shift();
@@ -90,7 +90,7 @@ const specialForms = {
   },
 
   fn(env, rest) {
-    asserts.arity([2], "fn", rest);
+    asserts.arity([2], "fn", rest.size);
 
     if(!types.isVector(rest.get(0)))
        throw new SyntaxError("The first argument to fn (the arguments) must be a vector.");
@@ -100,7 +100,7 @@ const specialForms = {
 };
 
 function evaluate(expr, env) {
-  // treat symbols like variables to be looked up
+  // treat symbols like variables to be looked up.
   // (See comment on the def special form).
   if(expr instanceof types.Symbol) {
     const val = env[expr.get('name')];

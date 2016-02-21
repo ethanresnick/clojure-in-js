@@ -1,12 +1,12 @@
 module.exports = {
-  arity(allowedArities, fnName, args) {
-    if(!allowedArities.some(arity => args.size === arity))
-      throw new SyntaxError(`${fnName} expects exactly ${allowedArities.join(' or ')} arguments; got ${rest.size}.`);
+  arity(allowedArities, fnName, argCount) {
+    if(!allowedArities.some(arity => argCount === arity))
+      throw new SyntaxError(`${fnName} expects exactly ${allowedArities.join(' or ')} arguments; got ${argCount}.`);
   },
 
-  minArity(minArity, fnName, args) {
-    if(args.size < minArity)
-      throw new SyntaxError(`${fnName} expects at least ${minArity} arguments; got ${rest.size}.`);
+  minArity(minArity, fnName, argCount) {
+    if(argCount < minArity)
+      throw new SyntaxError(`${fnName} expects at least ${minArity} arguments; got ${argCount}.`);
   },
 
   instanceof(toTestDesc, toTest, expectedType) {
