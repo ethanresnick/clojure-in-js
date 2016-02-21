@@ -132,5 +132,8 @@ describe("special forms", () => {
       expect(globalEnv.y).to.be.undefined;
       expect(globalEnv.x).to.be.undefined;
     });
+  });
+
+  describe("fn", () => {
   })
 });

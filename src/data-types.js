@@ -13,6 +13,11 @@
  *
  * For numbers, strings, and booleans, we use the corresponding
  * js primitives, and nil becomes null.
+ *
+ * We represent clojure functions as a class. We can't (yet)
+ * have that class extend Function, because support for that
+ * is still too buggy in node (it's ES6 @@create voodoo).
+ * But soon.
  */
 "use strict";
 var Immutable = require('immutable');
@@ -20,6 +25,14 @@ var Immutable = require('immutable');
 class CljSymbol extends Immutable.Record({name:""}) {};
 
 class Keyword extends Immutable.Record({name:""}) {};
+
+class CljFunction {
+  constructor(params, body, env) {
+    this.params = params;
+    this.body = body;
+    this.env = env;
+  }
+}
 
 const vectorDiscriminator = Symbol();
 function Vector(/* ...args */) {
@@ -32,10 +45,16 @@ function isVector(it) {
   return it instanceof Immutable.List && it[vectorDiscriminator];
 }
 
+function isFunction(it) {
+  return typeof it === "function" || it instanceof CljFunction;
+}
+
 module.exports = {
   Symbol: CljSymbol,
   List: Immutable.List,
   Keyword,
   Vector,
-  isVector
+  Function: CljFunction,
+  isVector,
+  isFunction
 };

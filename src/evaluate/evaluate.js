@@ -87,6 +87,14 @@ const specialForms = {
     // Now evaluate the body.
     return specialForms["do"](newEnv, body);
   },
+
+  fn(env, rest) {
+    asserts.arity([2], "fn", rest);
+
+    if(!types.isVector(rest.get(0)))
+       throw new SyntaxError("The first argument to fn (the arguments) must be a vector.");
+
+    return new types.Function(rest.get(0), rest.shift(), env);
   }
 };
 
@@ -126,8 +134,24 @@ function evaluate(expr, env) {
 
     else {
       const fn = evaluate(expr.get(0), env);
-      const args = expr.shift().map(v => evaluate(v, env)).toArray();
-      return fn.apply(null, args);
+
+      if(!types.isFunction(fn))
+        throw new SyntaxError("The first item in a list literal must be a function.");
+
+      // Evaluate the arguments.
+      const argValues = expr.shift().map(v => evaluate(v, env))
+
+      // If it's a (user defined) function defined in clojure,
+      // call it by evaluating the fn as a let defined in the
+      // context of the function's original lexical environment.
+      if(fn instanceof types.Function) {
+        const bindings = new types.Vector(fn.params.interleave(argValues));
+        console.log(bindings);
+        return specialForms["let"](fn.env, new types.List([bindings]).concat(fn.body));
+      }
+
+      // If it's a js function, just call it directly, with no env.
+      return fn.apply(null, argValues.toArray());
     }
   }
 
