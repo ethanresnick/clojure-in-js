@@ -10,6 +10,14 @@ var run = function(program, env) {
   return evaluate(parse.parse(program), env);
 }
 
+describe("getting root scope", () => {
+  const root = Object.create(null);
+  const inner = Object.create(root);
+  const innerInner = Object.create(inner);
+
+  expect(evaluate.getRootScope(innerInner)).to.equal(root);
+});
+
 describe("evaluation basics", () => {
   it("should properly evaluate numbers", () => {
     expect(run("4", {})).to.equal(4);
@@ -77,5 +85,37 @@ describe("special forms", () => {
   });
 
   describe("def", () => {
+    const root = Object.create(null);
+    const env = Object.create(root);
+
+    it("should set a binding on the root scope, even if used from an inner scope", () => {
+      run("(def bob 1)", env);
+      expect(Object.prototype.hasOwnProperty.call(env, "bob")).to.be.false;
+      expect(env.bob).to.equal(1);
+      expect(root.bob).to.equal(1);
+    });
+
+    it("should set a binding that's mutable", () => {
+      run("(def a 4)", env);
+      run("(def a 6)", env);
+      expect(root.a).to.equal(6);
+      run("(do (def a 7) (def a 1))", env);
+      expect(root.a).to.equal(1);
+    });
+
+    it("should return the bound value", () => {
+      expect(run("(def b true)", env)).to.be.true;
+    });
+
+    it("should use the _inner_ scope's values to compute the bound value", () => {
+      env.innerVal = 2;
+      root.innverVal = 1;
+      env["+"] = globalEnv["+"];
+
+      run("(def innerVal (+ innerVal 1))", env);
+      expect(root.innerVal).to.equal(3);
+      expect(env.innerVal).to.equal(2);
+    });
+  });
   })
 });
