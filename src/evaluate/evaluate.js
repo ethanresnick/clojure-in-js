@@ -1,6 +1,7 @@
 "use strict";
-var types = require('../data-types');
-var asserts = require('./asserts');
+const types = require('../data-types');
+const asserts = require('./asserts');
+const utils = require("./utils");
 
 // Define our special forms.
 const specialForms = {
@@ -43,7 +44,7 @@ const specialForms = {
     // scope to get the value we're going to bind, but we put
     // the binding on the root scope.
     const value = evaluate(rest.get(1), env);
-    getRootScope(env)[rest.get(0).get('name')] = value;
+    utils.getRootScope(env)[rest.get(0).get('name')] = value;
 
     return value;
   },
@@ -98,19 +99,6 @@ const specialForms = {
   }
 };
 
-
-/**
- * Walks the prototype chain until it gets to the last obj before null.
- */
-function getRootScope(env) {
-  let outerEnv;
-  while((outerEnv = Object.getPrototypeOf(env)) !== null) {
-    env = outerEnv;
-  }
-  return env;
-}
-
-
 function evaluate(expr, env) {
   // treat symbols like variables to be looked up
   // (See comment on the def special form).
@@ -160,6 +148,4 @@ function evaluate(expr, env) {
   return expr;
 }
 
-
-evaluate.getRootScope = getRootScope;
 module.exports = evaluate;

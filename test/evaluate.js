@@ -10,14 +10,6 @@ var run = function(program, env) {
   return evaluate(parse.parse(program), env);
 }
 
-describe("getting root scope", () => {
-  const root = Object.create(null);
-  const inner = Object.create(root);
-  const innerInner = Object.create(inner);
-
-  expect(evaluate.getRootScope(innerInner)).to.equal(root);
-});
-
 describe("evaluation basics", () => {
   it("should properly evaluate numbers", () => {
     expect(run("4", {})).to.equal(4);
