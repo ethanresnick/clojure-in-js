@@ -39,6 +39,11 @@ describe("evaluation basics", () => {
 });
 
 describe("special forms", () => {
+  const env = Object.assign(Object.create(globalEnv), {
+    willThrow() { throw new ReferenceError("fn was called"); },
+    willThrowSyntax() { throw new SyntaxError("blah"); }
+  });
+
   describe("quote", () => {
     it("should return its argument unevaluated", () => {
       expect(run("(quote (+ 1 2 3))", {})).to.deep.equal(parse.parse("(+ 1 2 3)"));
@@ -46,21 +51,28 @@ describe("special forms", () => {
   });
 
   describe("if", () => {
-    const env = Object.assign(Object.create(globalEnv), {
-      "will-throw": function() { throw new Error("fn was called"); }
-    });
-
     it("should evaluate the condition", () => {
       expect(run("(if (= (+ 1 2) 3) true false)", globalEnv)).to.be.true;
     });
 
     it("should lazily evaluate the branches", () => {
       // If these tests complete successfully, will-throw wasn't called.
-      expect(run("(if true (+ 1 2 3) (will-throw 1))", env)).to.equal(6);
-      expect(run("(if false (will-throw 1) 8)", env)).to.equal(8);
+      expect(run("(if true (+ 1 2 3) (willThrow 1))", env)).to.equal(6);
+      expect(run("(if false (willThrow 1) 8)", env)).to.equal(8);
 
-      expect(() => { run("(if true (will-throw 1) 1)", env) }).to.throw(Error);
-      expect(() => { run("(if false 4 (will-throw (+ 1 2 6)))", env) }).to.throw(Error);
+      expect(() => { run("(if true (willThrow 1) 1)", env) }).to.throw(Error);
+      expect(() => { run("(if false 4 (willThrow (+ 1 2 6)))", env) }).to.throw(Error);
+    });
+  });
+
+  describe("do", () => {
+    it("should evaluate each expression in order", () => {
+      expect(() => { run("(do (willThrow) (willThrowSyntax))", env) }).to.throw(ReferenceError);
+      expect(() => { run("(do (willThrowSyntax) (willThrow))", env) }).to.throw(SyntaxError);
+    });
+
+    it("should return the value of the last expression", () => {
+      expect(run("(do 4 7)", env)).to.equal(7);
     });
   });
 

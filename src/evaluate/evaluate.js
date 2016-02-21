@@ -47,6 +47,13 @@ const specialForms = {
 
     return value;
   },
+
+  do(env, rest) {
+    // TODO: check whether map gaurantees to process the
+    // items in order, or whether it just assumes that
+    // there'll be no side effects & order's irrelevant.
+    return rest.map(v => evaluate(v, env)).last();
+  },
   }
 };
 
