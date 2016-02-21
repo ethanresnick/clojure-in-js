@@ -1,5 +1,6 @@
 "use strict";
-const utils = require("../src/evaluate/utils.js");
+const expect = require("chai").expect;
+const utils = require("../../src/evaluate/utils.js");
 
 describe("getting root scope", () => {
   const root = Object.create(null);

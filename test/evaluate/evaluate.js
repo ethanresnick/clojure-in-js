@@ -1,10 +1,9 @@
 "use strict";
-var mocha = require("mocha");
 var expect = require("chai").expect;
-var types = require("../src/data-types");
-var parse = require("../src/parse/parse.js");
-var globalEnv = require("../src/evaluate/global-env.js");
-var evaluate = require("../src/evaluate/evaluate.js");
+var types = require("../../src/data-types");
+var parse = require("../../src/parse/parse.js");
+var globalEnv = require("../../src/evaluate/global-env.js");
+var evaluate = require("../../src/evaluate/evaluate.js");
 
 var run = function(program, env) {
   return evaluate(parse.parse(program), env);
@@ -123,6 +122,14 @@ describe("special forms", () => {
       run("(let [x 1 y x] y)", globalEnv);
       expect(globalEnv.y).to.be.undefined;
       expect(globalEnv.x).to.be.undefined;
+    });
+
+    it("should make bindings shadowable", () => {
+      expect(run("(let [x 10] (list (let [x 2] x) x))", globalEnv)).to.deep.equal(types.List([2, 10]));
+    });
+
+    it("should create scopes that have access to outer variables", () => {
+      expect(run("(do (def outer 9) (let [inner 9] (= inner outer)))", globalEnv)).to.be.true;
     });
   });
 
