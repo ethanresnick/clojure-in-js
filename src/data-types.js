@@ -35,7 +35,7 @@ class CljFunction {
 }
 
 const vectorDiscriminator = Symbol();
-function Vector(/* ...args */) {
+function Vector(/* same arg formats as List*/) {
   const list = Immutable.List.apply(Immutable, arguments);
   list[vectorDiscriminator] = true;
   return list;

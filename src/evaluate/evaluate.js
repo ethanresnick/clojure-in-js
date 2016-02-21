@@ -79,10 +79,13 @@ const specialForms = {
     // Assume we're just dealing with symbols as
     // our binding forms (i.e., no destructuring yet).
     for(let i = 0; i < bindings.size; i+=2) {
+      // use Object.defineProperty to make the value non-writeable,
+      // while avoiding the override mistake if we're shadowing.
+      // See: https://esdiscuss.org/topic/set-and-inherited-readonly-data-properties
       Object.defineProperty(
         newEnv,
         bindings.get(i).get('name'),
-        {value: evaluate(bindings.get(i+1), newEnv), enumerable: true});
+        {value: evaluate(bindings.get(i+1), newEnv)});
     }
 
     // Now evaluate the body.
@@ -134,7 +137,6 @@ function evaluate(expr, env) {
       // context of the function's original lexical environment.
       if(fn instanceof types.Function) {
         const bindings = new types.Vector(fn.params.interleave(argValues));
-        console.log(bindings);
         return specialForms["let"](fn.env, new types.List([bindings]).concat(fn.body));
       }
 
