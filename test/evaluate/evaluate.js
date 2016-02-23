@@ -46,12 +46,17 @@ describe("evaluation basics", () => {
 describe("special forms", () => {
   const env = Object.assign(Object.create(globalEnv), {
     willThrow() { throw new ReferenceError("fn was called"); },
-    willThrowSyntax() { throw new SyntaxError("blah"); }
+    willThrowSyntax() { throw new SyntaxError("blah"); },
+    transformOne(item, fn, config) { return fn(item, config); }
   });
 
   describe("quote", () => {
     it("should return its argument unevaluated", () => {
       expect(run("(quote (+ 1 2 3))", {})).to.deep.equal(parse.parse("(+ 1 2 3)"));
+    });
+
+    it("should not evaluate the arguments in the process", () => {
+      expect(() => run("(quote (willThrow))", env)).to.not.throw(Error);
     });
   });
 
@@ -145,6 +150,10 @@ describe("special forms", () => {
       const sequentialTest2 = () => run("(do (def a 2) (def test (fn [a b] (list a b))) (test 1 a))", globalEnv);
       expect(sequentialTest1).to.throw(ReferenceError);
       expect(sequentialTest2()).to.deep.equal(new types.List([1, 2]));
+    });
+
+    it("should represent clj functions so that js functions can call them (with working bindings)", () => {
+      expect(run("(do (def x (fn [it conf] (+ it conf))) (transformOne 4 x 1))", env)).to.equal(5);
     });
   });
 });

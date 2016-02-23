@@ -64,51 +64,28 @@ const specialForms = {
    * Note: in Clojure, let binds sequentially, meaning that a
    * later-bound value can read earlier bindings and base its value
    * off of them. This is useful, but it's not applicable to function
-   * calls, where all the arguments *need* to be evaluated upfront
-   * and independently (though possibly in a fixed order, for side
-   * effects). Therefore, if we want to reuse the `let` form for
-   * handling creating a function's local scope--which is highly
-   * useful, since let will also contain a bunch of destructuring
-   * logic--we have to add a special flag (the third argument) that
-   * lets us turn off sequential binding on function calls.
+   * calls, where all the arguments *need* to be evaluated independently
+   * (though possibly in a fixed order, for side effects) and are
+   * *already* being evaluated upfront, by evaluate. Therefore, if we
+   * want to reuse the `let` form for handling creating a function's
+   * local scope--which is highly useful, since let will also contain
+   * a bunch of destructuring logic--we have to add a special flag
+   * (the third argument) that lets us turn off sequential evaluation
+   * and binding on function calls.
    */
-  let(env, rest, bindSequentially) {
+  let(env, rest, fromFnCall) {
     asserts.minArity(2, "let", rest.size);
-
-    // default bindSequentially to true
-    bindSequentially = (bindSequentially === undefined) ? true : bindSequentially;
 
     const bindings = rest.get(0);
     const body = rest.shift();
 
-    if(!types.isVector(bindings))
-       throw new SyntaxError("The first argument to let (the binding forms) must be a vector.");
-
-    if(bindings.size % 2 !== 0)
-      throw new SyntaxError("let expects an even number of items in the bindings vector.");
-
     // Create the child env.
     const newEnv = Object.create(env);
 
-    // Set up the local bindings, evaluating as we go.
-    // Assume we're just dealing with symbols as
-    // our binding forms (i.e., no destructuring yet).
-    //
-    // We use Object.defineProperty to add the value as a *non-writeable*
-    // property, while also avoiding the override mistake if we're shadowing.
-    // See: https://esdiscuss.org/topic/set-and-inherited-readonly-data-properties
-    //
-    // Note: bindSequentially comes in here to affect the *environment* from
-    // which we're evaluating the next binding's init-expr. If we're not
-    // supposed to bindSequentially, we evaluate all bindings from the parent
-    // env (so the fact that we attach the bound values to the childEnv
-    // sequentially is unobservable).
-    for(let i = 0; i < bindings.size; i+=2) {
-      Object.defineProperty(
-        newEnv,
-        bindings.get(i).get('name'),
-        {value: evaluate(bindings.get(i+1), bindSequentially ? newEnv : env)});
-    }
+    // Set up the local bindings.
+    // Note: fromFnCall comes in here to affect our evaluation strategy.
+    const evalStrategy = fromFnCall ? (it => it) : (it => evaluate(it, newEnv));
+    utils.bind(newEnv, bindings, evalStrategy);
 
     // Now evaluate the body.
     return specialForms["do"](newEnv, body);
@@ -120,7 +97,7 @@ const specialForms = {
     if(!types.isVector(rest.get(0)))
        throw new SyntaxError("The first argument to fn (the arguments) must be a vector.");
 
-    return new types.Function(rest.get(0), rest.shift(), env);
+    return new types.Function(rest.get(0), rest.shift(), env, this.let);
   }
 };
 
@@ -151,21 +128,9 @@ function evaluate(expr, env) {
       if(!types.isFunction(fn))
         throw new SyntaxError("The first item in a list literal must be a function.");
 
-      const args = expr.shift()
+      const argsArray = expr.shift().map(v => evaluate(v, env)).toArray();
 
-      // If it's a (user defined) function defined in clojure,
-      // call it by evaluating the fn as a let defined in the
-      // context of the function's original lexical environment.
-      if(fn instanceof types.Function) {
-        const bindings = new types.Vector(fn.params.interleave(args));
-        return specialForms["let"](fn.env, new types.List([bindings]).concat(fn.body), false);
-      }
-
-      // If it's a js function, just call it directly, with no env.
-      // Note: we have to evaluate the args for js functions first,
-      // even though we don't when calling clojure functions, because
-      // `let` takes care of that evaluation.
-      return fn.apply(null, args.map(v => evaluate(v, env)).toArray());
+      return fn.apply(null, argsArray);
     }
   }
 

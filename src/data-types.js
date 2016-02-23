@@ -26,14 +26,6 @@ class CljSymbol extends Immutable.Record({name:""}) {};
 
 class Keyword extends Immutable.Record({name:""}) {};
 
-class CljFunction {
-  constructor(params, body, env) {
-    this.params = params;
-    this.body = body;
-    this.env = env;
-  }
-}
-
 const vectorDiscriminator = Symbol();
 function Vector(/* same arg formats as List*/) {
   const list = Immutable.List.apply(Immutable, arguments);
@@ -45,8 +37,15 @@ function isVector(it) {
   return it instanceof Immutable.List && it[vectorDiscriminator];
 }
 
+function CljFunction(params, body, env, letForm) {
+  return function() {
+    const bindings = new Vector(params.interleave(arguments));
+    return letForm(env, new Immutable.List([bindings]).concat(body), false);
+  }
+}
+
 function isFunction(it) {
-  return typeof it === "function" || it instanceof CljFunction;
+  return typeof it === "function";
 }
 
 module.exports = {
