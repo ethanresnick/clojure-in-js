@@ -40,6 +40,7 @@ describe("evaluation basics", () => {
   it("should only evaluate function arguments once when called", () => {
     // If the args are evalauted twice, we'll get an error because 1 isn't a function.
     expect(run("(count (list 1 2))", globalEnv)).to.equal(2);
+    expect(run("(do (def x (fn [x] x)) (x (list 1 2)))", globalEnv)).to.deep.equal(types.List([1, 2]));
   })
 });
 

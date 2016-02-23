@@ -50,7 +50,7 @@ function isVector(it) {
 function CljFunction(params, body, env, letForm) {
   return function() {
     const bindings = new Vector(params.interleave(arguments));
-    return letForm(env, new Immutable.List([bindings]).concat(body), false);
+    return letForm(env, new Immutable.List([bindings]).concat(body), true);
   }
 }
 
