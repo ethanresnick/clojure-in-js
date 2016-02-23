@@ -56,5 +56,16 @@ module.exports = createEnv({
 
   "count": function(iterable) {
     return iterable.count();
+  },
+
+  "reduce": function(reducer, optStartVal, coll) {
+    // To match clojure, we only call the reducer with two
+    // arguments (unlike immutable, which throws in others too).
+    const reducer2 = (acc, it) => reducer(acc, it)
+
+    if(arguments.length === 2)
+      return optStartVal.reduce(reducer2);
+
+    return coll.reduce(reducer2, optStartVal);
   }
 });

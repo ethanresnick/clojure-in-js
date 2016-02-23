@@ -33,6 +33,16 @@ function Vector(/* same arg formats as List*/) {
   return list;
 }
 
+// Below, we don't just add/remove the discriminator,
+// because we don't want to mutate the objects.
+function vectorToList(vector) {
+  return Immutable.List(vector.toArray());
+}
+
+function listToVector(list) {
+  return Vector(list.toArray());
+}
+
 function isVector(it) {
   return it instanceof Immutable.List && it[vectorDiscriminator];
 }
@@ -55,5 +65,7 @@ module.exports = {
   Vector,
   Function: CljFunction,
   isVector,
-  isFunction
+  isFunction,
+  listToVector,
+  vectorToList
 };
