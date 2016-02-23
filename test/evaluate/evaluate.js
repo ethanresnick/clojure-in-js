@@ -164,5 +164,9 @@ describe("special forms", () => {
     it("should support all the same binding forms as let", () => {
       expect(run("(do (def x (fn [x [y]] (+ x y))) (x 1 (list 6 2 3)))", env)).to.equal(7);
     });
+
+    it("should support closure", () => {
+      expect(run("(def fn-with-outer-ref (let [x 3] (fn [y] (+ y x)))) (fn-with-outer-ref 7)", globalEnv)).to.equal(10);
+    });
   });
 });

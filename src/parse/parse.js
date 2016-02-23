@@ -88,12 +88,16 @@ function parseExpression(tokens) {
 
 
 function parse(program) {
-  const parsed = parseExpression(tokenize(program));
+  const exprs = [];
+  let currExpr = {rest: tokenize(program)};
 
-  if(parsed.rest.length)
-    throw new SyntaxError("Unexpected text after the program's main expression.");
+  while(currExpr.rest.length) {
+    currExpr = parseExpression(currExpr.rest)
+    exprs.push(currExpr.expr);
+  }
 
-  return parsed.expr;
+  // Wrap in implicit "do" if necessary.
+  return exprs.length > 1 ? types.List([new types.Symbol({name: "do"})]).concat(exprs) : exprs[0];
 }
 
 module.exports = {

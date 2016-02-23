@@ -78,6 +78,9 @@ describe("parsing arbitrary expressions from tokens", () => {
 
 // The master "integration test" of sorts.
 describe("parsing a program from text", () => {
+  const sym = (name) => new types.Symbol({name: name });
+  const list = function() { return types.List(arguments) };
+
   it("should parse an arbitrary, single-expression program", () => {
     const programLines = ["(defn inclist",
                             '"Returns a new list with each entry from the provided list incremented by 1."',
@@ -87,9 +90,6 @@ describe("parsing a program from text", () => {
                                 "(= 0 size) (list)",
                                 "(= 1 size) (list (inc (first thisList)))",
                                 ":else (cons (inc (first thisList)) (inclist (rest thisList))))))"];
-
-    const sym = (name) => new types.Symbol({name: name });
-    const list = function() { return types.List(arguments) };
 
     expect(parse.parse(programLines.join("\n"))).to.deep.equal(list(
       sym("defn"),
@@ -107,5 +107,9 @@ describe("parsing a program from text", () => {
         )
       )
     ));
+  });
+
+  it("should parse a multiple-expression program, wrapping the expressions in a `do`", () => {
+    expect(parse.parse(("4 7 (+ 4 7)"))).to.deep.equal(list(sym("do"), 4, 7, list(sym("+"), 4, 7)));
   });
 });
