@@ -26,11 +26,18 @@ function bind(env, bindings, evaluator) {
     let bindingForm = bindings.get(i);
     let initExpr = bindings.get(i+1);
 
+    // The binding form being a symbol is our base case.
     // Note: we use Object.defineProperty to add the value as a *non-writeable*
     // property, while also avoiding the override mistake if we're shadowing.
     // See: https://esdiscuss.org/topic/set-and-inherited-readonly-data-properties
     if(bindingForm instanceof types.Symbol) {
       Object.defineProperty(env, bindingForm.get('name'), {value: evaluator(initExpr) });
+    }
+
+    if(types.isVector(bindingForm)) {
+      bindingForm.forEach((subForm, i) =>
+        bind(env, types.Vector([subForm, initExpr.get(i)]), evaluator)
+      );
     }
   }
 }

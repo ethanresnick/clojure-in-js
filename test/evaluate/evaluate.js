@@ -125,6 +125,10 @@ describe("special forms", () => {
       expect(run("(let [x 1 y 9] (+ y x))", globalEnv)).to.equal(10);
     });
 
+    it("should destructure vectors (recursively)", () => {
+      expect(run("(let [a 7 [x [y]] [1 [9] 2]] (* a (+ y x)))", globalEnv)).to.equal(70);
+    });
+
     it("should allow subsequent bindings to see previous ones", () => {
       expect(run("(let [x 1 y x] y)", globalEnv)).to.equal(1);
     });
@@ -154,6 +158,10 @@ describe("special forms", () => {
 
     it("should represent clj functions so that js functions can call them (with working bindings)", () => {
       expect(run("(do (def x (fn [it conf] (+ it conf))) (transformOne 4 x 1))", env)).to.equal(5);
+    });
+
+    it("should support all the same binding forms as let", () => {
+      expect(run("(do (def x (fn [x [y]] (+ x y))) (x 1 (list 6 2 3)))", env)).to.equal(7);
     });
   });
 });
