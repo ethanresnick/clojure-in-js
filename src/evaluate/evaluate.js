@@ -128,9 +128,12 @@ function evaluate(expr, env) {
       if(!types.isFunction(fn))
         throw new SyntaxError("The first item in a list literal must be a function.");
 
-      const argsArray = expr.shift().map(v => evaluate(v, env)).toArray();
+      const argsArrayUnevaluated = expr.shift().toArray();
 
-      return fn.apply(null, argsArray);
+      if(types.isMacro(fn))
+        return evaluate(fn.apply(null, [expr, env].concat(argsArrayUnevaluated)), env);
+
+      return fn.apply(null, argsArrayUnevaluated.map(v => evaluate(v, env)));
     }
   }
 

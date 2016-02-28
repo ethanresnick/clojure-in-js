@@ -58,6 +58,18 @@ function isFunction(it) {
   return typeof it === "function";
 }
 
+function isMacro(it) {
+  return it && it.isMacro;
+}
+
+function setMacro(it) {
+  if (!isFunction(it))
+    throw new TypeError("Can't turn non-function into macro.")
+
+  it.isMacro = true;
+  return it;
+}
+
 module.exports = {
   Symbol: CljSymbol,
   List: Immutable.List,
@@ -66,6 +78,8 @@ module.exports = {
   Function: CljFunction,
   isVector,
   isFunction,
+  isMacro,
+  setMacro,
   listToVector,
   vectorToList
 };
