@@ -146,10 +146,20 @@ describe("special forms", () => {
 
     it("should create scopes that have access to outer variables", () => {
       expect(run("(do (def outer 9) (let [inner 9] (= inner outer)))", globalEnv)).to.be.true;
+
+      //cleanup
+      delete globalEnv.outer;
     });
   });
 
   describe("fn", () => {
+    afterEach(() => {
+      delete globalEnv.test
+      delete globalEnv.a
+      delete globalEnv.x
+      delete globalEnv["fn-with-outer-ref"]
+    });
+
     it("should NOT bind its arguments sequentially like a standard let", () => {
       const sequentialTest1 = () => run("(do (def test (fn [a b] (list a b))) (test 1 a))", globalEnv);
       const sequentialTest2 = () => run("(do (def a 2) (def test (fn [a b] (list a b))) (test 1 a))", globalEnv);
@@ -166,7 +176,7 @@ describe("special forms", () => {
     });
 
     it("should support all the same binding forms as let", () => {
-      expect(run("(do (def x (fn [x [y]] (+ x y))) (x 1 (list 6 2 3)))", env)).to.equal(7);
+      expect(run("(do (def x (fn [x [y]] (+ x y))) (x 1 (list 6 2 3)))", globalEnv)).to.equal(7);
     });
 
     it("should support closure", () => {

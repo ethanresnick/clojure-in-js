@@ -21,16 +21,23 @@
  */
 "use strict";
 var Immutable = require('immutable');
+const vectorDiscriminator = Symbol();
 
 class CljSymbol extends Immutable.Record({name:""}) {};
 
 class Keyword extends Immutable.Record({name:""}) {};
 
-const vectorDiscriminator = Symbol();
 function Vector(/* same arg formats as List*/) {
   const list = Immutable.List.apply(Immutable, arguments);
   list[vectorDiscriminator] = true;
   return list;
+}
+
+function CljFunction(params, body, env, letForm) {
+  return function() {
+    const bindings = new Vector(params.interleave(arguments));
+    return letForm(env, new Immutable.List([bindings]).concat(body), true);
+  }
 }
 
 // Below, we don't just add/remove the discriminator,
@@ -45,13 +52,6 @@ function listToVector(list) {
 
 function isVector(it) {
   return it instanceof Immutable.List && it[vectorDiscriminator];
-}
-
-function CljFunction(params, body, env, letForm) {
-  return function() {
-    const bindings = new Vector(params.interleave(arguments));
-    return letForm(env, new Immutable.List([bindings]).concat(body), true);
-  }
 }
 
 function isFunction(it) {
