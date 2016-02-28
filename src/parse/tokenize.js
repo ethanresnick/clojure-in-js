@@ -11,79 +11,72 @@
 function tokenize(program) {
   var delimiters = /^[\[\]\(\)\s]/,
       tokens = [],
-      currToken = "", currPos = 0, char,
+      currToken = "", currPos = 0, char = program[0],
       lastProgramIndex = program.length - 1;
 
-  function finalizeToken() {
+  const finalizeToken = () => {
     if(currToken.length)
       tokens.push(currToken)
 
     currToken = "";
   }
 
-  while(currPos < program.length) {
+  const advance = () => {
+    currPos++;
     char = program[currPos];
+  }
 
-    // Within a string or a comment, normal delimiters
-    // don't trigger new tokens. Instead, the tokenizer
-    // stays in "string state" or "comment state" until
-    // it sees the one character that can end a string or
-    // commment respectively. Therefore, it's easy to just
-    // immediately loop to the end of the token once it starts,
-    // and thereby save ourselves from having to store
-    // state flags for this outer loop.
+  while(currPos < program.length) {
+    // When we get to the start of a string or comment, just
+    // immediately build that whole token, which is easy because
+    // no normal delimiters trigger new tokens in strings or
+    // comments. This saves us from having to store state flags
+    // for this outer loop.
     if(char === '"') {
       finalizeToken();
 
       do {
-        // We're on the program's last character and haven't
-        // found the ending double quote yet. (Check >= to
-        // also, in case the escape-handling code skipped over
-        // the last character.)
+        // We're on the program's last character and haven't found
+        // the ending double quote yet. (Check >= also, in case the
+        // escape-handling code skipped over the last character.)
         if(currPos >= lastProgramIndex)
           throw new SyntaxError("Unexpected end of string");
 
         // Support backslash escapes for \\ and \" in strings.
         if(char === '\\') {
-          let nextChar = program[currPos + 1];
+          advance();
 
-          if(nextChar !== '"' && nextChar !== '\\')
+          if(char !== '"' && char !== '\\')
             throw new SyntaxError('Escape sequences besides \\\\ and \\" are not supported.')
-
-          char = nextChar;
-          currPos++;
         }
 
         currToken += char;
-        currPos++;
-        char = program[currPos];
+        advance();
       }
       while(char !== '"');
 
-      // Capture the ending quote.
-      currToken += char;
+      currToken += char; // Capture the ending quote.
       finalizeToken();
     }
 
     else if(char === ";") {
-      finalizeToken()
+      finalizeToken();
 
       do {
         currToken += char;
-        currPos++;
-        char = program[currPos];
+        advance();
       }
-
       while(char && char !== "\n");
+
       finalizeToken();
     }
 
-    // If we encounter a delimiter outside a string/comment...
+    // If we encounter a delimiter outside a string/comment,
+    // add a token for the delimiter itself, except if the
+    // delimiter is any kind of space. Spaces don't get a token.
     else if(delimiters.test(char)) {
       finalizeToken();
 
-      // Add a token for the delimiter itself, except if the
-      // delimiter is some form of space. Spaces don't get a token.
       if(!/^\s/.test(char))
         tokens.push(char)
     }
@@ -92,7 +85,7 @@ function tokenize(program) {
       currToken += char;
     }
 
-    currPos++;
+    advance();
   }
 
   // Above, we're adding the tokens that we build up character
