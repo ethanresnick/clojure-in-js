@@ -16,6 +16,22 @@ function tokenize(program) {
   while(currPos < program.length) {
     char = program[currPos];
 
+    // Support backslash escapes for \\ and \" in strings.
+    // If we are in a string, and we see \, ignore it and
+    // and add the _next char_ literally to the token,
+    // advancing the current character in the process and
+    // skipping to the next iteration.
+    if(inString && char === '\\') {
+      let nextChar = program[currPos + 1];
+
+      if(!nextChar || (nextChar !== '"' && nextChar !== '\\'))
+        throw new SyntaxError('Escape sequences besides \\\\ and \\" are not supported.')
+
+      currToken += nextChar;
+      currPos += 2;
+      continue;
+    }
+
     // Keep a flag for whether we're inside a string, since
     // normal delimiters don't trigger new tokens within strings.
     if(char == '"')
@@ -51,8 +67,12 @@ function tokenize(program) {
   // list when we get to the delimiter after the token ends. But,
   // if such a token is the last token in the stream, we need to
   // add it too! This does that.
-  if(currToken.length)
+  if(currToken.length) {
+    if(inString)
+      throw new SyntaxError("Unexpected end of string");
+
     tokens.push(currToken);
+  }
 
   return tokens;
 }

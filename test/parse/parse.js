@@ -8,6 +8,7 @@ describe("parsing atoms from a token", () => {
 
   it("should return strings from string tokens", () => {
     expect(toAtom('"bob"')).to.equal("bob");
+    expect(toAtom('"This is a "str\\ing []"')).to.equal('This is a "str\\ing []');
   });
 
   it("should return booleans for literal true and false", () => {

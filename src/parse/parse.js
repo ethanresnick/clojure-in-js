@@ -18,7 +18,7 @@ var tokenize = require("./tokenize");
 function atomFromToken(token) {
   var match;
 
-  if (match = /^"([^"]*)"$/.exec(token))
+  if (match = /^"(.*)"$/.exec(token))
     return match[1];
 
   else if (match = /^\d+(\.\d+)?$/.exec(token))

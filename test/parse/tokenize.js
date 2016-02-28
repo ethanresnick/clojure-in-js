@@ -36,6 +36,22 @@ describe("tokenization", () => {
     ]);
   });
 
+  it("should support using a backslash escape to put literal backslash and quotes in strings", () => {
+    expect(tokenize('(str "This is a \\"str\\\\ing []")')).to.deep.equal([
+      "(", "str", '"This is a "str\\ing []"', ')'
+    ]);
+  });
+
+  // Once the double quote character is allowed in strings,
+  // a token can start and end with a double quote, but still
+  // not represent a valid string, because the ending quote can
+  // be the literal last character rather than a delimiter).
+  // toAtom can't make this distinction, though, so we have
+  // to do it in tokenize.
+  it("should error on unclosed strings", () => {
+    expect(() => tokenize('"te\\\"')).to.throw(SyntaxError);
+  });
+
   it("should treat a new line like a space between tokens", () => {
     expect(tokenize("(str\nt)")).to.deep.equal(["(", "str", "t", ")"]);
   });
