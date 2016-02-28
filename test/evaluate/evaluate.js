@@ -5,9 +5,15 @@ var parse = require("../../src/parse/parse.js");
 var globalEnv = require("../../src/evaluate/global-env.js");
 var evaluate = require("../../src/evaluate/evaluate.js");
 
-var run = function(program, env) {
+function run(program, env) {
   return evaluate(parse.parse(program), env);
 }
+
+const env = Object.assign(Object.create(globalEnv), {
+  willThrow() { throw new ReferenceError("fn was called"); },
+  willThrowSyntax() { throw new SyntaxError("blah"); },
+  transformOne(item, fn, config) { return fn(item, config); }
+});
 
 describe("evaluation basics", () => {
   it("should properly evaluate numbers", () => {
@@ -45,12 +51,6 @@ describe("evaluation basics", () => {
 });
 
 describe("special forms", () => {
-  const env = Object.assign(Object.create(globalEnv), {
-    willThrow() { throw new ReferenceError("fn was called"); },
-    willThrowSyntax() { throw new SyntaxError("blah"); },
-    transformOne(item, fn, config) { return fn(item, config); }
-  });
-
   describe("quote", () => {
     it("should return its argument unevaluated", () => {
       expect(run("(quote (+ 1 2 3))", {})).to.deep.equal(parse.parse("(+ 1 2 3)"));
@@ -182,5 +182,11 @@ describe("special forms", () => {
     it("should support closure", () => {
       expect(run("(def fn-with-outer-ref (let [x 3] (fn [y] (+ y x)))) (fn-with-outer-ref 7)", globalEnv)).to.equal(10);
     });
+  });
+});
+
+describe("macros", () => {
+  it("should not evaluate the arguments before running the macro", () => {
+    expect(() => run("(defmacro ignore [expr] nil) (ignore (willThrow))", env)).to.not.throw();
   });
 });

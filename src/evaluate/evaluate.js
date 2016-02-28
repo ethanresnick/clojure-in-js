@@ -137,8 +137,8 @@ function evaluate(expr, env) {
     }
   }
 
-  // For all other types (i.e. keywords, vector literals,
-  // numbers, strings, booleans, and nil, return them as parsed).
+  // For all other types (i.e. keywords, vector literals, numbers,
+  // strings, booleans, nil, and function objects), return them as parsed).
   return expr;
 }
 

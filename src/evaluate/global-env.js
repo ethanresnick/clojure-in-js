@@ -12,13 +12,29 @@ function sym(name) {
   return new types.Symbol({name: name});
 }
 
+// See http://clojure.org/reference/macros#_special_variables
+const macroSpecialParams =
+  types.Vector([sym("&form"), sym("&env")]);
+
 
 module.exports = createEnv({
+  "setMacro": types.setMacro,
+
   "defn": types.setMacro(function(form, env, name /* ...paramsAndBody */) {
     const paramsAndBody = Array.from(arguments).slice(3);
 
     return types.List([sym("def"), name,
       types.List([sym("fn")]).concat(paramsAndBody)]);
+  }),
+
+  "defmacro": types.setMacro(function(form, env, name, params /* ...body */) {
+    const body = Array.from(arguments).slice(4);
+    const fullParamVec = types.Vector(macroSpecialParams.concat(params));
+
+    return types.List([sym("do"),
+        types.List([sym("defn"), name, fullParamVec]).concat(body),
+        types.List([types.setMacro, name])
+    ]);
   }),
 
   "+": function(/* ...args */) {

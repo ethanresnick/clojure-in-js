@@ -43,3 +43,11 @@ describe("defn", () => {
     expect(env.x).to.be.a.function;
   });
 });
+
+describe("defmacro", () => {
+  it("should return a function marked as a macro and saved in the global scope", () => {
+    expect(run("(defmacro x [fn arg1 arg2] (list fn arg1 arg2)) (x + (+ 1 1) 2)", env)).to.equal(4);
+    expect(Object.prototype.hasOwnProperty.call(env, "x")).to.be.true;
+    expect(env.x.isMacro).to.be.true;
+  });
+});
