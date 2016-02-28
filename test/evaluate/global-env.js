@@ -2,6 +2,12 @@
 const expect = require("chai").expect;
 const types = require("../../src/data-types");
 const env = require("../../src/evaluate/global-env");
+const parse = require("../../src/parse/parse");
+const evaluate = require("../../src/evaluate/evaluate");
+
+function run(program, env) {
+  return evaluate(parse.parse(program), env);
+}
 
 describe("-", () => {
   it("should throw with no args", () => {
@@ -25,5 +31,15 @@ describe("reduce", () => {
 
   it("should support providing a starting value", () => {
     expect(env.reduce(env["+"], 7, types.List([1, 2, 3]))).to.equal(13);
+  });
+});
+
+describe("defn", () => {
+  afterEach(() => { delete env.x });
+
+  it("should define a function", () => {
+    expect(run("(defn x [it] it) (x 4)", env)).to.equal(4);
+    expect(Object.prototype.hasOwnProperty.call(env, "x")).to.be.true;
+    expect(env.x).to.be.a.function;
   });
 });

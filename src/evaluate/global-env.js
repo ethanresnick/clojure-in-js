@@ -8,7 +8,19 @@ function createEnv(symbols) {
   return Object.assign(Object.create(null), symbols);
 }
 
+function sym(name) {
+  return new types.Symbol({name: name});
+}
+
+
 module.exports = createEnv({
+  "defn": types.setMacro(function(form, env, name /* ...paramsAndBody */) {
+    const paramsAndBody = Array.from(arguments).slice(3);
+
+    return types.List([sym("def"), name,
+      types.List([sym("fn")]).concat(paramsAndBody)]);
+  }),
+
   "+": function(/* ...args */) {
     return Array.from(arguments).reduce(((acc, it) => acc + it), 0);
   },
