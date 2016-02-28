@@ -30,6 +30,15 @@ describe("tokenization", () => {
     ]);
   });
 
+  it("should output a token for a comment", () => {
+    expect(tokenize("my-symbol ; this symbol \"does\" x\n")).to.deep.equal(["my-symbol", "; this symbol \"does\" x"]);
+    expect(tokenize("my-symbol ; this symbol does x\nabc")).to.deep.equal(["my-symbol", "; this symbol does x", "abc"]);
+  });
+
+  it("should not confuse semicolons in strings for comments", () => {
+    expect(tokenize('"This is a ; string []"')).to.deep.equal(['"This is a ; string []"']);
+  });
+
   it("should parse strings, with their quotes, as a single token", () => {
     expect(tokenize('(str "This is a string []")')).to.deep.equal([
       "(", "str", '"This is a string []"', ")"
@@ -42,6 +51,15 @@ describe("tokenization", () => {
     ]);
   });
 
+  it("should delimit on strings and comments", () => {
+    expect(tokenize('(abc"test")')).to.deep.equal(["(", "abc", '"test"', ")"]);
+    expect(tokenize("abc;test")).to.deep.equal(["abc", ';test']);
+    expect(tokenize('"abc";test')).to.deep.equal(['"abc"', ';test']);
+    expect(tokenize(";test\n\"abc\"")).to.deep.equal([";test", '"abc"']);
+    expect(tokenize('"abc"test')).to.deep.equal(['"abc"', 'test']);
+    expect(tokenize('(str "ab""ab")')).to.deep.equal(['(', 'str', '"ab"', '"ab"', ')']);
+  });
+
   // Once the double quote character is allowed in strings,
   // a token can start and end with a double quote, but still
   // not represent a valid string, because the ending quote can
@@ -50,6 +68,8 @@ describe("tokenization", () => {
   // to do it in tokenize.
   it("should error on unclosed strings", () => {
     expect(() => tokenize('"te\\\"')).to.throw(SyntaxError);
+    expect(() => tokenize('"te')).to.throw(SyntaxError);
+    expect(() => tokenize('"')).to.throw(SyntaxError);
   });
 
   it("should treat a new line like a space between tokens", () => {

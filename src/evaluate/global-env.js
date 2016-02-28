@@ -37,6 +37,10 @@ module.exports = createEnv({
     ]);
   }),
 
+  "comment": types.setMacro(function(form, env, comment) {
+    return null;
+  }),
+
   "+": function(/* ...args */) {
     return Array.from(arguments).reduce(((acc, it) => acc + it), 0);
   },

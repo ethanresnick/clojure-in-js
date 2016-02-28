@@ -11,48 +11,81 @@
 function tokenize(program) {
   var delimiters = /^[\[\]\(\)\s]/,
       tokens = [],
-      currToken = "", currPos = 0, inString = false, char;
+      currToken = "", currPos = 0, char,
+      lastProgramIndex = program.length - 1;
+
+  function finalizeToken() {
+    if(currToken.length)
+      tokens.push(currToken)
+
+    currToken = "";
+  }
 
   while(currPos < program.length) {
     char = program[currPos];
 
-    // Support backslash escapes for \\ and \" in strings.
-    // If we are in a string, and we see \, ignore it and
-    // and add the _next char_ literally to the token,
-    // advancing the current character in the process and
-    // skipping to the next iteration.
-    if(inString && char === '\\') {
-      let nextChar = program[currPos + 1];
+    // Within a string or a comment, normal delimiters
+    // don't trigger new tokens. Instead, the tokenizer
+    // stays in "string state" or "comment state" until
+    // it sees the one character that can end a string or
+    // commment respectively. Therefore, it's easy to just
+    // immediately loop to the end of the token once it starts,
+    // and thereby save ourselves from having to store
+    // state flags for this outer loop.
+    if(char === '"') {
+      finalizeToken();
 
-      if(!nextChar || (nextChar !== '"' && nextChar !== '\\'))
-        throw new SyntaxError('Escape sequences besides \\\\ and \\" are not supported.')
+      do {
+        // We're on the program's last character and haven't
+        // found the ending double quote yet. (Check >= to
+        // also, in case the escape-handling code skipped over
+        // the last character.)
+        if(currPos >= lastProgramIndex)
+          throw new SyntaxError("Unexpected end of string");
 
-      currToken += nextChar;
-      currPos += 2;
-      continue;
+        // Support backslash escapes for \\ and \" in strings.
+        if(char === '\\') {
+          let nextChar = program[currPos + 1];
+
+          if(nextChar !== '"' && nextChar !== '\\')
+            throw new SyntaxError('Escape sequences besides \\\\ and \\" are not supported.')
+
+          char = nextChar;
+          currPos++;
+        }
+
+        currToken += char;
+        currPos++;
+        char = program[currPos];
+      }
+      while(char !== '"');
+
+      // Capture the ending quote.
+      currToken += char;
+      finalizeToken();
     }
 
-    // Keep a flag for whether we're inside a string, since
-    // normal delimiters don't trigger new tokens within strings.
-    if(char == '"')
-      inString = !inString;
+    else if(char === ";") {
+      finalizeToken()
 
-    // If we encounter a delimiter when we're not in a string...
-    if(!inString && delimiters.test(char)) {
+      do {
+        currToken += char;
+        currPos++;
+        char = program[currPos];
+      }
 
-      // Add the token we've been building up thus far (e.g. the
-      // multiple characters in a single symbol token) as a token.
-      if(currToken.length)
-        tokens.push(currToken)
+      while(char && char !== "\n");
+      finalizeToken();
+    }
 
-      // *And*, add a token for the delimiter character itself,
-      // except if the delimiter is some form of space. Spaces
-      // don't get a token.
+    // If we encounter a delimiter outside a string/comment...
+    else if(delimiters.test(char)) {
+      finalizeToken();
+
+      // Add a token for the delimiter itself, except if the
+      // delimiter is some form of space. Spaces don't get a token.
       if(!/^\s/.test(char))
         tokens.push(char)
-
-      // And, finally, reset the token.
-      currToken = "";
     }
 
     else {
@@ -67,12 +100,7 @@ function tokenize(program) {
   // list when we get to the delimiter after the token ends. But,
   // if such a token is the last token in the stream, we need to
   // add it too! This does that.
-  if(currToken.length) {
-    if(inString)
-      throw new SyntaxError("Unexpected end of string");
-
-    tokens.push(currToken);
-  }
+  finalizeToken();
 
   return tokens;
 }

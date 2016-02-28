@@ -18,14 +18,17 @@ var tokenize = require("./tokenize");
 function atomFromToken(token) {
   var match;
 
-  if (match = /^"(.*)"$/.exec(token))
-    return match[1];
+  if (token[0] === '"' && token[token.length-1] === '"')
+    return token.slice(1, -1);
+
+  else if (token === "true" || token === "false" || token === "nil")
+    return token === "nil" ? null : (token === "true");
 
   else if (match = /^\d+(\.\d+)?$/.exec(token))
     return Number(match[0]);
 
-  else if (match = /^(true|false|nil)$/.exec(token))
-    return match[0] === "nil" ? null : (match[0] === "true");
+  else if (token[0] === ";")
+    return new types.List([new types.Symbol({name: "comment"}), token.slice(1)]);
 
   else if (match = /^[^()"\[\]]+$/.exec(token))
     return match[0][0] === ":" ?

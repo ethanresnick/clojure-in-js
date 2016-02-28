@@ -24,6 +24,12 @@ describe("parsing atoms from a token", () => {
     expect(toAtom("my-future")).to.deep.equal(new types.Symbol({ name: "my-future" }));
   });
 
+  it("should return an invocation of the comments macro for comments", () => {
+    expect(toAtom("; this is a comment")).to.deep.equal(
+      new types.List([new types.Symbol({name: "comment"}), " this is a comment"])
+    );
+  })
+
   it("should return a keyword node for keywords", () => {
     expect(toAtom(":true")).to.deep.equal(new types.Keyword({ name: "true" }));
   });
@@ -84,7 +90,7 @@ describe("parsing a program from text", () => {
 
   it("should parse an arbitrary, single-expression program", () => {
     const programLines = ["(defn inclist",
-                            '"Returns a new list with each entry from the provided list incremented by 1."',
+                            '"Returns a new list; that list has each entry from the provided list incremented by 1."',
                             "[thisList]",
                             "(let [size (count thisList)]",
                               "(cond",
@@ -95,7 +101,7 @@ describe("parsing a program from text", () => {
     expect(parse.parse(programLines.join("\n"))).to.deep.equal(list(
       sym("defn"),
       sym("inclist"),
-      "Returns a new list with each entry from the provided list incremented by 1.",
+      "Returns a new list; that list has each entry from the provided list incremented by 1.",
       types.Vector([sym("thisList")]),
       list(sym("let"), types.Vector([sym("size"), list(sym("count"), sym("thisList"))]),
         list(sym("cond"),

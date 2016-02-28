@@ -51,3 +51,9 @@ describe("defmacro", () => {
     expect(env.x.isMacro).to.be.true;
   });
 });
+
+describe("comment", () => {
+  it("should ignore its input", () => {
+    expect(run("(comment \"blah blah\")", env)).to.equal(null);
+  });
+});
