@@ -157,6 +157,10 @@ describe("special forms", () => {
       expect(sequentialTest2()).to.deep.equal(new types.List([1, 2]));
     });
 
+    it("should support multi-expression bodies", () => {
+      expect(run("((fn [a] (+ a a) 4) 4)", globalEnv)).to.equal(4);
+    });
+
     it("should represent clj functions so that js functions can call them (with working bindings)", () => {
       expect(run("(do (def x (fn [it conf] (+ it conf))) (transformOne 4 x 1))", env)).to.equal(5);
     });

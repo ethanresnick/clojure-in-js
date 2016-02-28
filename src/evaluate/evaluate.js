@@ -92,7 +92,7 @@ const specialForms = {
   },
 
   fn(env, rest) {
-    asserts.arity([2], "fn", rest.size);
+    asserts.minArity(2, "fn", rest.size);
 
     if(!types.isVector(rest.get(0)))
        throw new SyntaxError("The first argument to fn (the arguments) must be a vector.");
