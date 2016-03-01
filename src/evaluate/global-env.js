@@ -86,6 +86,10 @@ module.exports = createEnv({
     return iterable.rest();
   },
 
+  "nth": function(iterable, index) {
+    return iterable.get(index);
+  },
+
   "count": function(iterable) {
     return iterable.count();
   },
