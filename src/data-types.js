@@ -110,7 +110,7 @@ const HashMapBuilder = {
   },
   finalize: function(map) {
     if(!map.onKey)
-      throw new SyntaxError("A map must be created with an even number of items.")
+      throw new SyntaxError("Map literal must contain an even number of forms.")
 
     return Immutable.Map(map.val);
   }
