@@ -189,4 +189,8 @@ describe("macros", () => {
   it("should not evaluate the arguments before running the macro", () => {
     expect(() => run("(defmacro ignore [expr] nil) (ignore (willThrow))", env)).to.not.throw();
   });
+
+  it("should call macros with a special &form variable", () => {
+    expect(run("(defmacro yourname? [x y] (nth &form 1)) (yourname? 9 1)", env)).to.equal(9);
+  });
 });
