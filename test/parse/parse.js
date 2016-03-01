@@ -61,6 +61,18 @@ describe("parsing arbitrary expressions from tokens", () => {
     });
   });
 
+  it("should handle maps", () => {
+    const exactlyMapOf = (pairs) => {
+      return {"expr": types.HashMap(pairs), rest: []};
+    }
+
+    expect(parseExp(["{", ":b", "false", "1", "true", "}"])).to.deep.equal(
+      exactlyMapOf([[new types.Keyword({name: "b"}), false], [1, true]])
+    );
+
+    expect(() => parseExp(["{", ":b", "false", "4", "}"])).to.throw(SyntaxError);
+  })
+
   it("should handle the empty vector", () => {
     expect(parseExp(["[", "]"])).to.deep.equal({
       expr: types.Vector(),

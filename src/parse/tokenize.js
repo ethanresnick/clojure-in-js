@@ -9,7 +9,7 @@
  * parsing later.
  */
 function tokenize(program) {
-  var delimiters = /^[\[\]\(\)\s]/,
+  var delimiters = /^[()\{\},\[\]\s]/,
       tokens = [],
       currToken = "", currPos = 0, char = program[0],
       lastProgramIndex = program.length - 1;
@@ -73,11 +73,12 @@ function tokenize(program) {
 
     // If we encounter a delimiter outside a string/comment,
     // add a token for the delimiter itself, except if the
-    // delimiter is any kind of space. Spaces don't get a token.
+    // delimiter is any kind of space. Spaces don't get a token,
+    // and commas count as whitespace.
     else if(delimiters.test(char)) {
       finalizeToken();
 
-      if(!/^\s/.test(char))
+      if(!/^(\s|,)/.test(char))
         tokens.push(char)
     }
 

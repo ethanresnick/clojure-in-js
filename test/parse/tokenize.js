@@ -24,6 +24,12 @@ describe("tokenization", () => {
     expect(tokenize(":true")).to.deep.equal([":true"]);
   });
 
+  it("should treat { and } as delimiters, and comma as whitespace", () => {
+    expect(tokenize("{:a true :b false, 1 true}")).to.deep.equal([
+      "{", ":a", "true", ":b", "false", "1", "true", "}"
+    ]);
+  })
+
   it("should parse keywords, with their leading colon, as a single token", () => {
     expect(tokenize("(:my-key my-map nil)")).to.deep.equal([
       "(", ":my-key", "my-map", "nil", ")"

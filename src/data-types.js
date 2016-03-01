@@ -73,6 +73,7 @@ function setMacro(it) {
 module.exports = {
   Symbol: CljSymbol,
   List: Immutable.List,
+  HashMap: Immutable.Map,
   Keyword,
   Vector,
   Function: CljFunction,

@@ -8,8 +8,13 @@
  * See data-types.js for details.
  */
 "use strict";
-var types = require("../data-types");
-var tokenize = require("./tokenize");
+const types = require("../data-types");
+const tokenize = require("./tokenize");
+const nonAtomMap = {
+  "(": [")", types.List],
+  "{": ["}", types.HashMap],
+  "[": ["]", types.Vector]
+};
 
 /**
  * Responsible for parsing pieces that don't have any other
@@ -30,7 +35,7 @@ function atomFromToken(token) {
   else if (token[0] === ";")
     return new types.List([new types.Symbol({name: "comment"}), token.slice(1)]);
 
-  else if (match = /^[^()"\[\]]+$/.exec(token))
+  else if (match = /^[^()"{}\[\]]+$/.exec(token))
     return match[0][0] === ":" ?
       new types.Keyword({ name: match[0].slice(1) }) :
       new types.Symbol({ name: match[0] });
@@ -48,14 +53,21 @@ function atomFromToken(token) {
  */
 function parseExpression(tokens) {
   tokens = tokens.slice(0);
-  var result = {};
+  let result = {}, typeInfo;
 
   if(tokens.length === 0)
     throw new SyntaxError("Unexpected end of input");
 
-  // Our (sub) expression is a list or vector.
-  if(tokens[0] === '(' || tokens[0] === '[') {
-    const closingDelim = tokens[0] === '(' ? ')' : ']';
+  // Our (sub) expression is a list, vector, or hash map.
+  if((typeInfo = nonAtomMap[tokens[0]]) !== undefined) {
+    const closingDelim = typeInfo[0];
+    const typeFn = typeInfo[1];
+
+    // for maps, we need to build up a form like
+    // [[k, v], [k, v]] rather than [1, 2, 3].
+    // This state helps us build that.
+    const isMap = (typeFn === types.HashMap);
+    let onKey = true, pairCount = 0;
 
     // Set up the AST node. We'll make it a standard
     // JS array while we're parsing/mutating it, and
@@ -67,15 +79,32 @@ function parseExpression(tokens) {
 
     while(tokens[0] !== closingDelim) {
       let entry = parseExpression(tokens);
-      result.expr.push(entry.expr);
+
+      if(!isMap)
+        result.expr.push(entry.expr);
+
+      else {
+        if(!onKey) {
+          result.expr[pairCount].push(entry.expr)
+          pairCount++;
+        }
+
+        else
+          result.expr.push([entry.expr])
+
+        onKey = !onKey;
+      }
 
       tokens = entry.rest;
     }
 
+    // Throw a syntax error if we didn't get
+    // an even number of map entries.
+    if(isMap && !onKey)
+      throw new SyntaxError("A map literal must contain an even number of items.")
+
     // Finalize the type of our node.
-    result.expr = (closingDelim == ')') ?
-      types.List(result.expr) :
-      types.Vector(result.expr);
+    result.expr = typeFn(result.expr);
 
     // Skip past the closing delimiter.
     result.rest = tokens.slice(1);
