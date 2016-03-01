@@ -70,6 +70,52 @@ function setMacro(it) {
   return it;
 }
 
+const ListBuilder = {
+  start() {
+    return [];
+  },
+  push(it, list) {
+    list.push(it);
+  },
+  finalize(list){
+    return Immutable.List(list);
+  }
+};
+
+const VectorBuilder = {
+  start: ListBuilder.start,
+  push: ListBuilder.push,
+  finalize(list) {
+    return Vector(list);
+  }
+};
+
+const HashMapBuilder = {
+  start() {
+    return { val: [], onKey: true, pairCount: 0 };
+  },
+
+  // This builds up a val in the form [[k, v], [k, v]],
+  // which is what we need to pass to Immutable.Map.
+  push(item, map) {
+    if(!map.onKey) {
+      map.val[map.pairCount].push(item)
+      map.pairCount++;
+    }
+
+    else
+      map.val.push([item])
+
+    map.onKey = !map.onKey;
+  },
+  finalize: function(map) {
+    if(!map.onKey)
+      throw new SyntaxError("A map must be created with an even number of items.")
+
+    return Immutable.Map(map.val);
+  }
+};
+
 module.exports = {
   Symbol: CljSymbol,
   List: Immutable.List,
@@ -82,5 +128,8 @@ module.exports = {
   isMacro,
   setMacro,
   listToVector,
-  vectorToList
+  vectorToList,
+  ListBuilder,
+  VectorBuilder,
+  HashMapBuilder
 };

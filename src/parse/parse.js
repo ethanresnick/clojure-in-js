@@ -11,9 +11,9 @@
 const types = require("../data-types");
 const tokenize = require("./tokenize");
 const nonAtomMap = {
-  "(": [")", types.List],
-  "{": ["}", types.HashMap],
-  "[": ["]", types.Vector]
+  "(": [")", types.ListBuilder],
+  "{": ["}", types.HashMapBuilder],
+  "[": ["]", types.VectorBuilder]
 };
 
 /**
@@ -61,18 +61,8 @@ function parseExpression(tokens) {
   // Our (sub) expression is a list, vector, or hash map.
   if((typeInfo = nonAtomMap[tokens[0]]) !== undefined) {
     const closingDelim = typeInfo[0];
-    const typeFn = typeInfo[1];
-
-    // for maps, we need to build up a form like
-    // [[k, v], [k, v]] rather than [1, 2, 3].
-    // This state helps us build that.
-    const isMap = (typeFn === types.HashMap);
-    let onKey = true, pairCount = 0;
-
-    // Set up the AST node. We'll make it a standard
-    // JS array while we're parsing/mutating it, and
-    // convert it to an Immutable.js type at the end.
-    result.expr = [];
+    const nodeBuilder = typeInfo[1];
+    const nodeInProgress = nodeBuilder.start();
 
     // Skip past the opening delimiter.
     tokens = tokens.slice(1);
@@ -80,31 +70,13 @@ function parseExpression(tokens) {
     while(tokens[0] !== closingDelim) {
       let entry = parseExpression(tokens);
 
-      if(!isMap)
-        result.expr.push(entry.expr);
-
-      else {
-        if(!onKey) {
-          result.expr[pairCount].push(entry.expr)
-          pairCount++;
-        }
-
-        else
-          result.expr.push([entry.expr])
-
-        onKey = !onKey;
-      }
-
+      nodeBuilder.push(entry.expr, nodeInProgress);
       tokens = entry.rest;
     }
 
-    // Throw a syntax error if we didn't get
-    // an even number of map entries.
-    if(isMap && !onKey)
-      throw new SyntaxError("A map literal must contain an even number of items.")
-
-    // Finalize the type of our node.
-    result.expr = typeFn(result.expr);
+    // Turn our "node in progress" into a real
+    // instance of the proper data structure.
+    result.expr = nodeBuilder.finalize(nodeInProgress);
 
     // Skip past the closing delimiter.
     result.rest = tokens.slice(1);
