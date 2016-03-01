@@ -103,5 +103,16 @@ module.exports = createEnv({
       return optStartVal.reduce(reducer2);
 
     return coll.reduce(reducer2, optStartVal);
+  },
+
+  "hash-map": function(/* ... keyvals */) {
+    if(arguments.length % 2 !== 0)
+      throw new Error("No value supplied for last key.");
+
+    const res = types.HashMapBuilder.start();
+
+    Array.from(arguments).forEach(it => types.HashMapBuilder.push(it, res));
+
+    return types.HashMapBuilder.finalize(res);
   }
 });

@@ -57,3 +57,11 @@ describe("comment", () => {
     expect(run("(comment \"blah blah\")", env)).to.equal(null);
   });
 });
+
+describe("hash-map", () => {
+  it('should return a hash map', () => {
+    expect(run('{3 7 "john" true :tim false}', env)).to.deep.equal(
+      run('(hash-map 3 7 "john" true :tim false)', env)
+    );
+  });
+});
