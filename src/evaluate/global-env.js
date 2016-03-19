@@ -94,6 +94,22 @@ module.exports = createEnv({
     return iterable.count();
   },
 
+  "empty": function(iterable) {
+    return iterable.isEmpty();
+  },
+
+  "not-empty": function(iterable) {
+    return !iterable.isEmpty();
+  },
+
+  "cons": function(x, rest) {
+    return rest.unshift(x);
+  },
+
+  "inc": function(x) {
+    return x + 1;
+  },
+
   "reduce": function(reducer, optStartVal, coll) {
     // To match clojure, we only call the reducer with two
     // arguments (unlike immutable, which throws in others too).
@@ -114,5 +130,9 @@ module.exports = createEnv({
     Array.from(arguments).forEach(it => types.HashMapBuilder.push(it, res));
 
     return types.HashMapBuilder.finalize(res);
+  },
+
+  "get": function(map, key, notFound) {
+    return map.get(key, notFound);
   }
 });
