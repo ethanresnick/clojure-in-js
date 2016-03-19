@@ -108,6 +108,7 @@ const HashMapBuilder = {
 
     map.onKey = !map.onKey;
   },
+
   finalize: function(map) {
     if(!map.onKey)
       throw new SyntaxError("Map literal must contain an even number of forms.")
