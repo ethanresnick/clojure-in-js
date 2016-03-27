@@ -1,7 +1,5 @@
 /**
- * My simplified lisp-ish parser
- *
- * Each program is a single expression.
+ * My simplified clojure-ish parser
  *
  * Programs are parsed into core data structures based on
  * those from Immutable.js (thanks homoiconicity!).
@@ -10,31 +8,37 @@
 "use strict";
 const types = require("../data-types");
 const tokenize = require("./tokenize");
-const nonAtomMap = {
+const nonAtomMap = Object.assign(Object.create(null), {
   "(": [")", types.ListBuilder],
   "{": ["}", types.HashMapBuilder],
   "[": ["]", types.VectorBuilder]
-};
+});
 
 /**
  * Responsible for parsing pieces that don't have any other
  * pieces nested inside them, i.e. symbols and primitives.
  */
 function atomFromToken(token) {
-  var match;
+  let match;
 
-  if (token[0] === '"' && token[token.length-1] === '"')
+  // tokens starting and ending with double quotes are strings.
+  if (token[0] === '"' && token[token.length-1] === '"') 
     return token.slice(1, -1);
 
+  // boolean & nil literals
   else if (token === "true" || token === "false" || token === "nil")
     return token === "nil" ? null : (token === "true");
 
-  else if (match = /^\d+(\.\d+)?$/.exec(token))
+  // the regex below matches floats and integers; assigns to match, 
+  // which will be falsey if the pattern doesn't match.
+  else if (match = /^\d+(\.\d+)?$/.exec(token)) 
     return Number(match[0]);
 
+  // comments
   else if (token[0] === ";")
     return new types.List([new types.Symbol({name: "comment"}), token.slice(1)]);
 
+  // symbols & keywords
   else if (match = /^[^()"{}\[\]]+$/.exec(token))
     return match[0][0] === ":" ?
       new types.Keyword({ name: match[0].slice(1) }) :
@@ -52,26 +56,29 @@ function atomFromToken(token) {
  * should be none, if the whole program is one exp).
  */
 function parseExpression(tokens) {
-  tokens = tokens.slice(0);
-  let result = {}, typeInfo;
+  let result = {};
 
-  if(tokens.length === 0)
+  // copy array so we're not mutating original
+  let remainingTokens = tokens.slice(0);
+
+  if(remainingTokens.length === 0)
     throw new SyntaxError("Unexpected end of input");
 
   // Our (sub) expression is a list, vector, or hash map.
-  if((typeInfo = nonAtomMap[tokens[0]]) !== undefined) {
+  if(remainingTokens[0] in nonAtomMap) {
+    const typeInfo = nonAtomMap[remainingTokens[0]];
     const closingDelim = typeInfo[0];
     const nodeBuilder = typeInfo[1];
     const nodeInProgress = nodeBuilder.start();
 
     // Skip past the opening delimiter.
-    tokens = tokens.slice(1);
+    remainingTokens.shift();
 
-    while(tokens[0] !== closingDelim) {
-      let entry = parseExpression(tokens);
+    while(remainingTokens[0] !== closingDelim) {
+      let entry = parseExpression(remainingTokens);
 
       nodeBuilder.push(entry.expr, nodeInProgress);
-      tokens = entry.rest;
+      remainingTokens = entry.rest;
     }
 
     // Turn our "node in progress" into a real
@@ -79,7 +86,7 @@ function parseExpression(tokens) {
     result.expr = nodeBuilder.finalize(nodeInProgress);
 
     // Skip past the closing delimiter.
-    result.rest = tokens.slice(1);
+    result.rest = remainingTokens.slice(1);
 
     return result;
   }
@@ -101,7 +108,9 @@ function parse(program) {
   }
 
   // Wrap in implicit "do" if necessary.
-  return exprs.length > 1 ? types.List([new types.Symbol({name: "do"})]).concat(exprs) : exprs[0];
+  return exprs.length > 1 ? 
+    types.List([new types.Symbol({name: "do"})]).concat(exprs) : 
+    exprs[0];
 }
 
 module.exports = {
