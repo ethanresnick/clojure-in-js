@@ -56,8 +56,6 @@ function atomFromToken(token) {
  * should be none, if the whole program is one exp).
  */
 function parseExpression(tokens) {
-  let result = {};
-
   // copy array so we're not mutating original
   let remainingTokens = tokens.slice(0);
 
@@ -70,6 +68,7 @@ function parseExpression(tokens) {
     const closingDelim = typeInfo[0];
     const nodeBuilder = typeInfo[1];
     const nodeInProgress = nodeBuilder.start();
+    const result = {};
 
     // Skip past the opening delimiter.
     remainingTokens.shift();
@@ -93,7 +92,7 @@ function parseExpression(tokens) {
 
   // Our (sub) expression is an atom.
   else {
-    return {expr: atomFromToken(tokens[0]), rest: tokens.slice(1)};
+    return {expr: atomFromToken(tokens[0]), rest: remainingTokens.slice(1)};
   }
 }
 
