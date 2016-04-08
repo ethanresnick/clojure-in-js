@@ -113,7 +113,7 @@ function evaluate(expr, env) {
   }
 
   // for lists, check for special forms; otherwise treat as a procedure call.
-  if(expr instanceof types.List && !types.isVector(expr)) {
+  if(types.isList(expr)) {
     // Handle the empty list.
     // This approach might be problematic once we have lazy seqs.
     if(expr.size === 0)

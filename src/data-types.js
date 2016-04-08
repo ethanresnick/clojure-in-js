@@ -50,6 +50,10 @@ function listToVector(list) {
   return Vector(list.toArray());
 }
 
+function isList(it) {
+  return it instanceof Immutable.List && !isVector(it);
+}
+
 function isVector(it) {
   return it instanceof Immutable.List && it[vectorDiscriminator];
 }
@@ -125,6 +129,7 @@ module.exports = {
   Vector,
   Function: CljFunction,
   isVector,
+  isList,
   isFunction,
   isMacro,
   setMacro,
