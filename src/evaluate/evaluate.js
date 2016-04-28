@@ -1,13 +1,11 @@
 "use strict";
 const types = require('../data-types');
-const asserts = require('./asserts');
+const asserts = require('../util/asserts');
 const utils = require("./utils");
 
 // Define our special forms.
 const specialForms = {
   if(env, rest) {
-    asserts.arity([3], "if", rest.size);
-
     const test = evaluate(rest.get(0), env);
     if(test === false || test === null)
       return evaluate(rest.get(2), env);
@@ -37,9 +35,6 @@ const specialForms = {
    * value rather than the var object.
    */
   def(env, rest) {
-    asserts.arity([2], "def", rest.size);
-    asserts.instanceof("First argument to def", rest.get(0), types.Symbol);
-
     // Note that we evaluate the expression in the current
     // scope to get the value we're going to bind, but we put
     // the binding on the root scope.
@@ -74,8 +69,6 @@ const specialForms = {
    * and binding on function calls.
    */
   let(env, rest, fromFnCall) {
-    asserts.minArity(2, "let", rest.size);
-
     const bindings = rest.get(0);
     const body = rest.shift();
 
@@ -92,11 +85,6 @@ const specialForms = {
   },
 
   fn(env, rest) {
-    asserts.minArity(2, "fn", rest.size);
-
-    if(!types.isVector(rest.get(0)))
-       throw new SyntaxError("The first argument to fn (the arguments) must be a vector.");
-
     return new types.Function(rest.get(0), rest.shift(), env, this.let);
   }
 };

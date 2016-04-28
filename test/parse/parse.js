@@ -132,3 +132,12 @@ describe("parsing a program from text", () => {
     expect(parse.parse(("4 7 (+ 4 7)"))).to.deep.equal(list(sym("do"), 4, 7, list(sym("+"), 4, 7)));
   });
 });
+
+describe("static pre-runtime checks", function() {
+  describe("if", () => {
+    it("should require three arguments", () => {
+      expect(() => parse.parse("(if a b c d)")).to.throw(SyntaxError);
+      expect(() => parse.parse("(if a b)")).to.throw(SyntaxError);
+    });
+  });
+});

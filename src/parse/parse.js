@@ -8,6 +8,7 @@
 "use strict";
 const types = require("../data-types");
 const tokenize = require("./tokenize");
+const validateAndExpand = require("../preprocess/preprocess");
 const nonAtomMap = Object.assign(Object.create(null), {
   "(": [")", types.ListBuilder],
   "{": ["}", types.HashMapBuilder],
@@ -58,6 +59,7 @@ function atomFromToken(token) {
 function parseExpression(tokens) {
   // copy array so we're not mutating original
   let remainingTokens = tokens.slice(0);
+  const result = {expr: undefined, rest: undefined};
 
   if(remainingTokens.length === 0)
     throw new SyntaxError("Unexpected end of input");
@@ -68,7 +70,6 @@ function parseExpression(tokens) {
     const closingDelim = typeInfo[0];
     const nodeBuilder = typeInfo[1];
     const nodeInProgress = nodeBuilder.start();
-    const result = {};
 
     // Skip past the opening delimiter.
     remainingTokens.shift();
@@ -86,14 +87,20 @@ function parseExpression(tokens) {
 
     // Skip past the closing delimiter.
     result.rest = remainingTokens.slice(1);
-
-    return result;
   }
 
   // Our (sub) expression is an atom.
   else {
-    return {expr: atomFromToken(tokens[0]), rest: remainingTokens.slice(1)};
+    result.expr = atomFromToken(tokens[0]);
+    result.rest = remainingTokens.slice(1);
   }
+
+  // Before returning, validate the expr we're about to parse
+  // (since we want to report errors pre-runtime where possible)
+  // and do macroexpansion, which should also happen before runtime.
+  result.expr = validateAndExpand(result.expr);
+
+  return result;
 }
 
 

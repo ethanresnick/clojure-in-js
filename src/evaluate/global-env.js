@@ -2,7 +2,7 @@
 const Immutable = require('immutable');
 const types = require('../data-types');
 const evaluate = require('./evaluate');
-const asserts = require('./asserts');
+const asserts = require('../util/asserts');
 
 function createEnv(symbols) {
   return Object.assign(Object.create(null), symbols);
